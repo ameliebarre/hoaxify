@@ -3,6 +3,7 @@ import { container } from 'tsyringe';
 import { TOKENS } from '@/shared';
 
 import { AuthController } from './modules/auth/auth.controller';
+import { LoginUserUseCase } from './modules/auth/use-cases/login-user';
 import { RegisterUserUseCase } from './modules/auth/use-cases/register-user';
 import { PasswordService } from './modules/security/password.service';
 import { IPasswordService } from './modules/security/password.service.interface';
@@ -26,6 +27,9 @@ container.registerSingleton<IPasswordService>(
 // Use Cases
 container.register(RegisterUserUseCase, {
   useClass: RegisterUserUseCase,
+});
+container.register(LoginUserUseCase, {
+  useClass: LoginUserUseCase,
 });
 
 // Controllers

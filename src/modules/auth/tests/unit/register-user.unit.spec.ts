@@ -2,7 +2,7 @@ import { EmailAlreadyExistsError } from '@/errors/email-already-exists.error';
 import { IPasswordService } from '@/modules/security/password.service.interface';
 import { IUserRepository } from '@/modules/user/user.repository.interface';
 
-import { RegisterUserUseCase } from './register-user';
+import { RegisterUserUseCase } from '../../use-cases/register-user';
 
 describe('RegisterUserUseCase', () => {
   const userRepository: jest.Mocked<IUserRepository> = {
@@ -12,6 +12,7 @@ describe('RegisterUserUseCase', () => {
 
   const passwordService: jest.Mocked<IPasswordService> = {
     hash: jest.fn(),
+    compare: jest.fn(),
   };
 
   const user = {

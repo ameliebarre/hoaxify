@@ -29,7 +29,7 @@ describe(`POST ${signupUrl}`, () => {
   });
 
   describe('when request is valid', () => {
-    it('returns 201 Created', async () => {
+    it('returns 201 when user is created', async () => {
       const response = await signup(validUser);
 
       expect(response.status).toBe(201);
