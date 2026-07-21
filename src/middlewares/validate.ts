@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import { ZodType, treeifyError } from 'zod';
+import { ZodType, flattenError } from 'zod';
 
 export function validate(schema: ZodType) {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -7,7 +7,7 @@ export function validate(schema: ZodType) {
 
     if (!result.success) {
       return res.status(400).json({
-        errors: treeifyError(result.error),
+        errors: flattenError(result.error),
       });
     }
 

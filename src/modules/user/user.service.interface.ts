@@ -1,4 +1,4 @@
-import { User } from '../user.types';
+import { User } from './user.types';
 
 export interface IUserService {
   getByEmail(email: string): Promise<User | null>;

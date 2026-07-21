@@ -18,9 +18,9 @@ export class RegisterUserUseCase {
   ) {}
 
   async execute(data: SignUpDto) {
-    const existingUser = await this.userService.getByEmail(data.email);
+    const user = await this.userService.getByEmail(data.email);
 
-    if (existingUser) {
+    if (user) {
       throw new EmailAlreadyExistsError();
     }
 

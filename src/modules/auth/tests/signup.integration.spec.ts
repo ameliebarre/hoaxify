@@ -55,6 +55,10 @@ describe(`POST ${signupUrl}`, () => {
 
       expect(user.password).not.toBe(validUser.password);
     });
+
+    it('trim and lowercase email before saving', async () => {
+      await signup({ ...validUser, email: 'JohnDoe@gmail.com' });
+    });
   });
 
   describe('when email already exists', () => {
@@ -95,16 +99,47 @@ describe(`POST ${signupUrl}`, () => {
       expect(response.status).toBe(400);
     });
 
+    it('returns 400 when username is too short', async () => {
+      const response = await signup({ ...validUser, username: 'jo' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.errors.fieldErrors.username).toBeDefined();
+      expect(response.body.errors.fieldErrors.username[0]).toBe(
+        'Username must be at least 3 characters long',
+      );
+    });
+
+    it('returns 400 when username is too long', async () => {
+      const response = await signup({
+        ...validUser,
+        username: 'vealngc1569beestickweaselblackeye',
+      });
+
+      expect(response.status).toBe(400);
+      expect(response.body.errors.fieldErrors.username).toBeDefined();
+      expect(response.body.errors.fieldErrors.username[0]).toBe(
+        'Username must not exceed 30 characters',
+      );
+    });
+
     it('returns 400 when email format is invalid', async () => {
       const response = await signup({ ...validUser, email: 'invalid-email' });
 
       expect(response.status).toBe(400);
+      expect(response.body.errors.fieldErrors.email).toBeDefined();
+      expect(response.body.errors.fieldErrors.email[0]).toBe(
+        'Please provide a valid email address',
+      );
     });
 
     it('returns 400 when password is too short', async () => {
       const response = await signup({ ...validUser, password: '123' });
 
       expect(response.status).toBe(400);
+      expect(response.body.errors.fieldErrors.password).toBeDefined();
+      expect(response.body.errors.fieldErrors.password[0]).toBe(
+        'Password must be at least 8 characters long',
+      );
     });
   });
 });
