@@ -8,8 +8,6 @@ import { PasswordService } from './modules/security/password.service';
 import { IPasswordService } from './modules/security/password.service.interface';
 import { UserRepository } from './modules/user/user.repository';
 import { IUserRepository } from './modules/user/user.repository.interface';
-import { UserService } from './modules/user/user.service';
-import { IUserService } from './modules/user/user.service.interface';
 
 // ====================== ENREGISTREMENT ======================
 
@@ -20,7 +18,6 @@ container.registerSingleton<IUserRepository>(
 );
 
 // Services
-container.registerSingleton<IUserService>(TOKENS.UserService, UserService);
 container.registerSingleton<IPasswordService>(
   TOKENS.PasswordService,
   PasswordService,

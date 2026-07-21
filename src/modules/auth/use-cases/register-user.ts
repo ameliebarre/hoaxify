@@ -2,7 +2,7 @@ import { injectable, inject } from 'tsyringe';
 
 import { EmailAlreadyExistsError } from '@/errors/email-already-exists.error';
 import { IPasswordService } from '@/modules/security/password.service.interface';
-import { IUserService } from '@/modules/user/user.service.interface';
+import { IUserRepository } from '@/modules/user/user.repository.interface';
 import { TOKENS } from '@/shared';
 
 import { SignUpDto } from '../auth.types';
@@ -10,15 +10,15 @@ import { SignUpDto } from '../auth.types';
 @injectable()
 export class RegisterUserUseCase {
   constructor(
-    @inject(TOKENS.UserService)
-    private readonly userService: IUserService,
+    @inject(TOKENS.UserRepository)
+    private readonly userRepository: IUserRepository,
 
     @inject(TOKENS.PasswordService)
     private readonly passwordService: IPasswordService,
   ) {}
 
   async execute(data: SignUpDto) {
-    const user = await this.userService.getByEmail(data.email);
+    const user = await this.userRepository.findByEmail(data.email);
 
     if (user) {
       throw new EmailAlreadyExistsError();
@@ -26,7 +26,7 @@ export class RegisterUserUseCase {
 
     const hashedPassword = await this.passwordService.hash(data.password);
 
-    return this.userService.createUser({
+    return this.userRepository.create({
       ...data,
       password: hashedPassword,
     });

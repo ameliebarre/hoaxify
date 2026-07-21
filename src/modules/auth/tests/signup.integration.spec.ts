@@ -1,10 +1,12 @@
 import 'reflect-metadata';
 import request from 'supertest';
 
-import '@/composition-root';
 import app from '@/app';
+import { container } from '@/composition-root';
 import db from '@/db';
 import { usersTable } from '@/db/schema';
+import { IUserRepository } from '@/modules/user/user.repository.interface';
+import { TOKENS } from '@/shared';
 import { signup } from '@/tests/helpers/auth';
 
 const validUser = {
@@ -16,6 +18,12 @@ const validUser = {
 const signupUrl = '/api/1.0/auth/signup';
 
 describe(`POST ${signupUrl}`, () => {
+  let userRepository: IUserRepository;
+
+  beforeAll(async () => {
+    userRepository = container.resolve<IUserRepository>(TOKENS.UserRepository);
+  });
+
   beforeEach(async () => {
     await db.delete(usersTable);
   });
@@ -56,8 +64,16 @@ describe(`POST ${signupUrl}`, () => {
       expect(user.password).not.toBe(validUser.password);
     });
 
-    it('trim and lowercase email before saving', async () => {
-      await signup({ ...validUser, email: 'JohnDoe@gmail.com' });
+    it('creates user with normalized email', async () => {
+      await request(app).post(signupUrl).send({
+        username: 'john',
+        email: '  John.Doe@Mail.COM ',
+        password: 'P4ssword',
+      });
+
+      const user = await userRepository.findByEmail('john.doe@mail.com');
+
+      expect(user).toBeDefined();
     });
   });
 
