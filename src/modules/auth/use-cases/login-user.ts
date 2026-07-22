@@ -1,7 +1,9 @@
 import { inject, injectable } from 'tsyringe';
 
 import { InvalidCredentialsError } from '@/errors/invalid-credentials-error';
-import { IPasswordService } from '@/modules/security/password.service.interface';
+import { IPasswordService } from '@/modules/security/domain/password.service.interface';
+import { ITokenService } from '@/modules/security/domain/token.service.interface';
+import { toPublicUser } from '@/modules/user/user.mapper';
 import { IUserRepository } from '@/modules/user/user.repository.interface';
 import { TOKENS } from '@/shared';
 
@@ -15,6 +17,9 @@ export class LoginUserUseCase {
 
     @inject(TOKENS.PasswordService)
     private readonly passwordService: IPasswordService,
+
+    @inject(TOKENS.TokenService)
+    private readonly tokenService: ITokenService,
   ) {}
 
   async execute(data: LoginDto) {
@@ -33,6 +38,13 @@ export class LoginUserUseCase {
       throw new InvalidCredentialsError();
     }
 
-    return user;
+    const accessToken = this.tokenService.generateAccessToken({
+      userId: user.id,
+    });
+
+    return {
+      user: toPublicUser(user),
+      accessToken,
+    };
   }
 }

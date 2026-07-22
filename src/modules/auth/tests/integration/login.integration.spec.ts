@@ -25,6 +25,8 @@ describe(`POST ${loginUrl}`, () => {
       const response = await login(user);
 
       expect(response.status).toBe(200);
+
+      expect(response.body.accessToken).toBeDefined();
     });
 
     it('returns success message', async () => {
@@ -42,7 +44,12 @@ describe(`POST ${loginUrl}`, () => {
       expect(response.status).toBe(200);
 
       expect(response.body).toEqual({
-        message: 'User is successfully logged in',
+        user: {
+          id: expect.any(Number),
+          username: 'john',
+          email: 'john@mail.com',
+        },
+        accessToken: expect.any(String),
       });
     });
   });

@@ -17,10 +17,8 @@ export class AuthController {
   }
 
   async login(req: Request, res: Response) {
-    await this.loginUserUseCase.execute(req.body);
+    const result = await this.loginUserUseCase.execute(req.body);
 
-    return res.status(200).send({
-      message: 'User is successfully logged in',
-    });
+    return res.status(200).send(result);
   }
 }

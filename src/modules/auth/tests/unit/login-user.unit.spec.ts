@@ -1,5 +1,6 @@
 import { InvalidCredentialsError } from '@/errors/invalid-credentials-error';
-import { IPasswordService } from '@/modules/security/password.service.interface';
+import { IPasswordService } from '@/modules/security/domain/password.service.interface';
+import { ITokenService } from '@/modules/security/domain/token.service.interface';
 import { IUserRepository } from '@/modules/user/user.repository.interface';
 
 import { LoginUserUseCase } from '../../use-cases/login-user';
@@ -9,6 +10,7 @@ describe('LoginUserUseCase', () => {
 
   let userRepository: jest.Mocked<IUserRepository>;
   let passwordService: jest.Mocked<IPasswordService>;
+  let tokenService: jest.Mocked<ITokenService>;
 
   beforeEach(() => {
     userRepository = {
@@ -21,32 +23,58 @@ describe('LoginUserUseCase', () => {
       compare: jest.fn(),
     };
 
-    useCase = new LoginUserUseCase(userRepository, passwordService);
+    tokenService = {
+      generateAccessToken: jest.fn(),
+      verifyAccessToken: jest.fn(),
+    };
+
+    useCase = new LoginUserUseCase(
+      userRepository,
+      passwordService,
+      tokenService,
+    );
   });
 
-  it('returns ser when credentials are valid', async () => {
+  it('returns user when credentials are valid', async () => {
     const user = {
       id: 1,
       username: 'john',
       email: 'john@mail.com',
       password: 'hashed-password',
+      createdAt: new Date(),
+      updatedAt: new Date(),
     };
 
     userRepository.findByEmail.mockResolvedValue(user);
 
     passwordService.compare.mockResolvedValue(true);
 
+    tokenService.generateAccessToken.mockReturnValue('fake-token');
+
     const result = await useCase.execute({
       email: 'john@mail.com',
       password: 'P4ssword',
     });
 
-    expect(result).toEqual(user);
+    expect(result).toEqual({
+      user: {
+        id: 1,
+        username: 'john',
+        email: 'john@mail.com',
+      },
+      accessToken: 'fake-token',
+    });
+
     expect(userRepository.findByEmail).toHaveBeenCalledWith('john@mail.com');
+
     expect(passwordService.compare).toHaveBeenCalledWith(
       'P4ssword',
       'hashed-password',
     );
+
+    expect(tokenService.generateAccessToken).toHaveBeenCalledWith({
+      userId: 1,
+    });
   });
 
   it('throws when user does not exist', async () => {
@@ -62,9 +90,12 @@ describe('LoginUserUseCase', () => {
 
   it('throws when password is invalid', async () => {
     userRepository.findByEmail.mockResolvedValue({
+      id: 1,
       username: 'john',
       email: 'john@mail.com',
       password: 'hashed-password',
+      createdAt: new Date(),
+      updatedAt: new Date(),
     });
 
     passwordService.compare.mockResolvedValue(false);

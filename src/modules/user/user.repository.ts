@@ -5,11 +5,11 @@ import db from '@/db';
 import { usersTable } from '@/db/schema';
 
 import { IUserRepository } from './user.repository.interface';
-import { User } from './user.types';
+import { NewUser, User } from './user.types';
 
 @injectable()
 export class UserRepository implements IUserRepository {
-  async create(user: User) {
+  async create(user: NewUser): Promise<User> {
     const [createdUser] = await db.insert(usersTable).values(user).returning();
     return createdUser;
   }

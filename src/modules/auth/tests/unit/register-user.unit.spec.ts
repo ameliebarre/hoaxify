@@ -1,8 +1,9 @@
 import { EmailAlreadyExistsError } from '@/errors/email-already-exists.error';
-import { IPasswordService } from '@/modules/security/password.service.interface';
+import { IPasswordService } from '@/modules/security/domain/password.service.interface';
 import { IUserRepository } from '@/modules/user/user.repository.interface';
 
 import { RegisterUserUseCase } from '../../use-cases/register-user';
+import { createUser } from '../factories/user.factory';
 
 describe('RegisterUserUseCase', () => {
   const userRepository: jest.Mocked<IUserRepository> = {
@@ -80,11 +81,11 @@ describe('RegisterUserUseCase', () => {
   });
 
   it('throws EmailAlreadyExistsError when email already exists', async () => {
-    userRepository.findByEmail.mockResolvedValue({
-      username: 'existing-user',
-      email: 'john@mail.com',
-      password: 'hashed-password',
-    });
+    userRepository.findByEmail.mockResolvedValue(
+      createUser({
+        username: 'existing-user',
+      }),
+    );
 
     await expect(useCase.execute(user)).rejects.toThrow(
       EmailAlreadyExistsError,
@@ -92,11 +93,11 @@ describe('RegisterUserUseCase', () => {
   });
 
   it('does not hash password when email already exists', async () => {
-    userRepository.findByEmail.mockResolvedValue({
-      username: 'existing-user',
-      email: 'john@mail.com',
-      password: 'hashed-password',
-    });
+    userRepository.findByEmail.mockResolvedValue(
+      createUser({
+        username: 'existing-user',
+      }),
+    );
 
     await expect(useCase.execute(user)).rejects.toThrow();
 
@@ -104,11 +105,11 @@ describe('RegisterUserUseCase', () => {
   });
 
   it('does not create user when email already exists', async () => {
-    userRepository.findByEmail.mockResolvedValue({
-      username: 'existing-user',
-      email: 'john@mail.com',
-      password: 'hashed-password',
-    });
+    userRepository.findByEmail.mockResolvedValue(
+      createUser({
+        username: 'existing-user',
+      }),
+    );
 
     await expect(useCase.execute(user)).rejects.toThrow();
 

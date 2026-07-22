@@ -1,3 +1,5 @@
 import { usersTable } from '@/db/schema/user.schema';
 
-export type User = typeof usersTable.$inferInsert;
+export type NewUser = typeof usersTable.$inferInsert;
+
+export type User = typeof usersTable.$inferSelect;

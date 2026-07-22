@@ -1,7 +1,7 @@
 import { injectable, inject } from 'tsyringe';
 
 import { EmailAlreadyExistsError } from '@/errors/email-already-exists.error';
-import { IPasswordService } from '@/modules/security/password.service.interface';
+import { IPasswordService } from '@/modules/security/domain/password.service.interface';
 import { IUserRepository } from '@/modules/user/user.repository.interface';
 import { TOKENS } from '@/shared';
 
