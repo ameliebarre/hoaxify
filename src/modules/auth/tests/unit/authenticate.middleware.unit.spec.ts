@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 
-import { UnauthorizedError } from '@/errors/invalid-credentials-error';
+import { UnauthorizedError } from '@/errors/unauthorized-error';
 import { ITokenService } from '@/modules/security/domain/token.service.interface';
 
 import { authenticateMiddleware } from '../../auth.middleware';

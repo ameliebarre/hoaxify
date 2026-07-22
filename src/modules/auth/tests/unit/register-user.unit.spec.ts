@@ -9,6 +9,7 @@ describe('RegisterUserUseCase', () => {
   const userRepository: jest.Mocked<IUserRepository> = {
     findByEmail: jest.fn(),
     create: jest.fn(),
+    findById: jest.fn(),
   };
 
   const passwordService: jest.Mocked<IPasswordService> = {

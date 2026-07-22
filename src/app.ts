@@ -8,8 +8,8 @@ const app = express();
 
 app.use(express.json());
 
-app.use(errorHandler);
-
 app.use('/api/1.0', apiRouter);
+
+app.use(errorHandler);
 
 export default app;

@@ -1,4 +1,4 @@
-import { UnauthorizedError } from '@/errors/invalid-credentials-error';
+import { UnauthorizedError } from '@/errors/unauthorized-error';
 import { IPasswordService } from '@/modules/security/domain/password.service.interface';
 import { ITokenService } from '@/modules/security/domain/token.service.interface';
 import { IUserRepository } from '@/modules/user/user.repository.interface';
@@ -16,6 +16,7 @@ describe('LoginUserUseCase', () => {
     userRepository = {
       findByEmail: jest.fn(),
       create: jest.fn(),
+      findById: jest.fn(),
     };
 
     passwordService = {

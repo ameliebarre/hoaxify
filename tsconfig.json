@@ -8,15 +8,17 @@
     "emitDecoratorMetadata": true,
     "rootDir": "./src",
     "outDir": "./dist",
-
     "strict": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-
     "paths": {
       "@/*": ["src/*"]
-    }
+    },
+    "typeRoots": [
+      "./src/types", // ← tes types custom en PREMIER
+      "./node_modules/@types"
+    ]
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts"],
   "exclude": ["node_modules", "dist"]

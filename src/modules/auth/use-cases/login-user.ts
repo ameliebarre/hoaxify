@@ -1,6 +1,6 @@
 import { inject, injectable } from 'tsyringe';
 
-import { UnauthorizedError } from '@/errors/invalid-credentials-error';
+import { UnauthorizedError } from '@/errors/unauthorized-error';
 import { IPasswordService } from '@/modules/security/domain/password.service.interface';
 import { ITokenService } from '@/modules/security/domain/token.service.interface';
 import { toPublicUser } from '@/modules/user/user.mapper';

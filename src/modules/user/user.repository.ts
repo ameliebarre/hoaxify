@@ -22,4 +22,13 @@ export class UserRepository implements IUserRepository {
 
     return user ?? null;
   }
+
+  async findById(id: number) {
+    const [user] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.id, id));
+
+    return user ?? null;
+  }
 }
