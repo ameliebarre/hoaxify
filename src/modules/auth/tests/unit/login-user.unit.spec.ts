@@ -1,4 +1,4 @@
-import { InvalidCredentialsError } from '@/errors/invalid-credentials-error';
+import { UnauthorizedError } from '@/errors/invalid-credentials-error';
 import { IPasswordService } from '@/modules/security/domain/password.service.interface';
 import { ITokenService } from '@/modules/security/domain/token.service.interface';
 import { IUserRepository } from '@/modules/user/user.repository.interface';
@@ -77,7 +77,7 @@ describe('LoginUserUseCase', () => {
     });
   });
 
-  it('throws when user does not exist', async () => {
+  it('throws unauthorized error when user does not exist', async () => {
     userRepository.findByEmail.mockResolvedValue(null);
 
     await expect(
@@ -85,10 +85,10 @@ describe('LoginUserUseCase', () => {
         email: 'unknown@mail.com',
         password: 'P4ssword',
       }),
-    ).rejects.toThrow(InvalidCredentialsError);
+    ).rejects.toThrow(UnauthorizedError);
   });
 
-  it('throws when password is invalid', async () => {
+  it('throws unauthorized error when password is invalid', async () => {
     userRepository.findByEmail.mockResolvedValue({
       id: 1,
       username: 'john',
@@ -105,6 +105,6 @@ describe('LoginUserUseCase', () => {
         email: 'john@mail.com',
         password: 'WrongPassword',
       }),
-    ).rejects.toThrow(InvalidCredentialsError);
+    ).rejects.toThrow(UnauthorizedError);
   });
 });

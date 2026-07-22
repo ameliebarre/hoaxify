@@ -1,4 +1,6 @@
 export interface ITokenService {
-  generateAccessToken(payload: object): string;
-  verifyAccessToken(token: string): object;
+  generateAccessToken(payload: { userId: number }): string;
+  verifyAccessToken(token: string): {
+    userId: number;
+  };
 }

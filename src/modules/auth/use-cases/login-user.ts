@@ -1,6 +1,6 @@
 import { inject, injectable } from 'tsyringe';
 
-import { InvalidCredentialsError } from '@/errors/invalid-credentials-error';
+import { UnauthorizedError } from '@/errors/invalid-credentials-error';
 import { IPasswordService } from '@/modules/security/domain/password.service.interface';
 import { ITokenService } from '@/modules/security/domain/token.service.interface';
 import { toPublicUser } from '@/modules/user/user.mapper';
@@ -26,7 +26,7 @@ export class LoginUserUseCase {
     const user = await this.userRepository.findByEmail(data.email);
 
     if (!user) {
-      throw new InvalidCredentialsError();
+      throw new UnauthorizedError();
     }
 
     const passwordMatch = await this.passwordService.compare(
@@ -35,7 +35,7 @@ export class LoginUserUseCase {
     );
 
     if (!passwordMatch) {
-      throw new InvalidCredentialsError();
+      throw new UnauthorizedError();
     }
 
     const accessToken = this.tokenService.generateAccessToken({

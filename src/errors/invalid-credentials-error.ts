@@ -1,7 +1,7 @@
 import { AppError } from './app-error';
 
-export class InvalidCredentialsError extends AppError {
+export class UnauthorizedError extends AppError {
   constructor() {
-    super('Invalid credentials', 401);
+    super('Unauthorized', 401);
   }
 }
