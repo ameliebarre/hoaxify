@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 
-import { EmailAlreadyExistsError } from '@/errors/email-already-exists.error';
-import { UnauthorizedError } from '@/errors/unauthorized-error';
+import { EmailAlreadyExistsError } from '@core/errors/email-already-exists.error';
+import { UnauthorizedError } from '@core/errors/unauthorized-error';
 
 export function errorHandler(
   err: unknown,

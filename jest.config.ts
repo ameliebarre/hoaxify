@@ -6,6 +6,10 @@ const config: Config = {
   maxWorkers: 1,
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^@core/(.*)$': '<rootDir>/src/core/$1',
+    '^@modules/(.*)$': '<rootDir>/src/modules/$1',
+    '^@infrastructure/(.*)$': '<rootDir>/src/infrastructure/$1',
+    '^@middlewares/(.*)$': '<rootDir>/src/middlewares/$1',
   },
   setupFilesAfterEnv: ['<rootDir>/tests/jest.setup.ts'],
   testMatch: ['**/*.unit.spec.ts', '**/*.integration.spec.ts'],

@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
     "target": "ES2022",
     "module": "CommonJS",
     "moduleResolution": "Node",
@@ -13,7 +14,12 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@core/*": ["src/core/*"],
+      "@middlewares/*": ["src/middlewares/*"],
+      "@infrastructure/*": ["src/infrastructure/*"],
+      "@modules/*": ["src/modules/*"],
+      "@tests/*": ["tests/*"]
     },
     "typeRoots": [
       "./src/types", // ← tes types custom en PREMIER

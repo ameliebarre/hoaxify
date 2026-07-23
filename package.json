@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn -r tsconfig-paths/register src/index.ts",
+    "dev": "ts-node-dev --respawn -r tsconfig-paths/register src/main.ts",
     "build": "tsc",
     "start": "node dist/index.js",
     "test": "jest --watch",
@@ -12,6 +12,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "lint": "eslint .",
+    "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier --write ."
   },
   "author": "",
