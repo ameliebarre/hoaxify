@@ -1,3 +1,4 @@
+import { UserNotFoundError } from '@core/errors/user-not-found.error';
 import { GetCurrentUserUseCase } from '@modules/auth/use-cases/get-current-user.use-case';
 import { IUserRepository } from '@modules/user/domain/user.repository.interface';
 
@@ -14,7 +15,7 @@ describe('GetCurrentUserUseCase', () => {
     useCase = new GetCurrentUserUseCase(userRepository);
   });
 
-  it('returns public user', async () => {
+  it('returns Ok(PublicUser) when user exists', async () => {
     userRepository.findById.mockResolvedValue({
       id: 1,
       username: 'john',
@@ -26,18 +27,20 @@ describe('GetCurrentUserUseCase', () => {
 
     const result = await useCase.execute(userId);
 
-    expect(result).toEqual({
+    expect(result.isOk()).toBe(true);
+    expect(result._unsafeUnwrap()).toEqual({
       id: 1,
       username: 'john',
       email: 'john@mail.com',
     });
   });
 
-  it('returns null when user does not exist', async () => {
+  it('returns Err(UserNotFoundError) when user does not exist', async () => {
     userRepository.findById.mockResolvedValue(null);
 
     const result = await useCase.execute(userId);
 
-    expect(result).toBeNull();
+    expect(result.isErr()).toBe(true);
+    expect(result._unsafeUnwrapErr()).toBeInstanceOf(UserNotFoundError);
   });
 });

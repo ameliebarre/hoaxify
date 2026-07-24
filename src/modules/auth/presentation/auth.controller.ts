@@ -19,19 +19,29 @@ export class AuthController {
   ) {}
 
   async signup(req: Request, res: Response) {
-    await this.registerUserUseCase.execute(req.body);
-    return res.status(201).send({ message: 'User successfully created' });
+    const result = await this.registerUserUseCase.execute(req.body);
+
+    return result.match(
+      () => res.status(201).json({ message: 'User successfully created' }),
+      (error) => res.status(error.statusCode).json({ message: error.message }),
+    );
   }
 
   async login(req: Request, res: Response) {
     const result = await this.loginUserUseCase.execute(req.body);
 
-    return res.status(200).send(result);
+    return result.match(
+      (data) => res.status(200).json(data),
+      (error) => res.status(error.statusCode).json({ message: error.message }),
+    );
   }
 
   async me(req: Request, res: Response) {
-    const user = await this.getCurrentUserUseCase.execute(req.user!.userId);
+    const result = await this.getCurrentUserUseCase.execute(req.user!.userId);
 
-    return res.status(200).json(user);
+    return result.match(
+      (user) => res.status(200).json(user),
+      (error) => res.status(error.statusCode).json({ message: error.message }),
+    );
   }
 }

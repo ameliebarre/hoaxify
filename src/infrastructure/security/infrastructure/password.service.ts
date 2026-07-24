@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import { injectable } from 'tsyringe';
 
-import { IPasswordService } from '@infrastructure/security/domain/password.service.interface';
+import type { IPasswordService } from '@infrastructure/security/domain/password.service.interface';
 
 const SALT_ROUNDS = 12;
 

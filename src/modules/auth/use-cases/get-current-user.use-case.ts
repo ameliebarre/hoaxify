@@ -1,7 +1,11 @@
+import { Result, ok, err } from 'neverthrow';
 import { inject, injectable } from 'tsyringe';
 
 import { TOKENS } from '@core/di/token';
-import { IUserRepository } from '@modules/user/domain/user.repository.interface';
+import { UserNotFoundError } from '@core/errors/user-not-found.error';
+import { PublicUser } from '@modules/auth/domain/auth.types';
+
+import type { IUserRepository } from '@modules/user/domain/user.repository.interface';
 
 @injectable()
 export class GetCurrentUserUseCase {
@@ -10,17 +14,19 @@ export class GetCurrentUserUseCase {
     private readonly userRepository: IUserRepository,
   ) {}
 
-  async execute(userId: number) {
+  async execute(
+    userId: number,
+  ): Promise<Result<PublicUser, UserNotFoundError>> {
     const user = await this.userRepository.findById(userId);
 
     if (!user) {
-      return null;
+      return err(new UserNotFoundError());
     }
 
-    return {
+    return ok({
       id: user.id,
       username: user.username,
       email: user.email,
-    };
+    });
   }
 }

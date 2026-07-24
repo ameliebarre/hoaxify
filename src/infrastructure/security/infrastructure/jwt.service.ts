@@ -18,7 +18,7 @@ export class JwtService implements ITokenService {
     try {
       return jwt.verify(token, env.JWT_SECRET!) as AccessTokenPayload;
     } catch {
-      throw new UnauthorizedError('Invalid or expired token');
+      throw new UnauthorizedError();
     }
   }
 }

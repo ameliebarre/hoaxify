@@ -1,10 +1,13 @@
+import { Result, ok, err } from 'neverthrow';
 import { injectable, inject } from 'tsyringe';
 
 import { TOKENS } from '@core/di/token';
 import { EmailAlreadyExistsError } from '@core/errors/email-already-exists.error';
-import { IPasswordService } from '@infrastructure/security/domain/password.service.interface';
 import { SignUpDto } from '@modules/auth/domain/auth.types';
-import { IUserRepository } from '@modules/user/domain/user.repository.interface';
+import { User } from '@modules/user/domain/user.types';
+
+import type { IPasswordService } from '@infrastructure/security/domain/password.service.interface';
+import type { IUserRepository } from '@modules/user/domain/user.repository.interface';
 
 @injectable()
 export class RegisterUserUseCase {
@@ -16,18 +19,22 @@ export class RegisterUserUseCase {
     private readonly passwordService: IPasswordService,
   ) {}
 
-  async execute(data: SignUpDto) {
-    const user = await this.userRepository.findByEmail(data.email);
+  async execute(
+    data: SignUpDto,
+  ): Promise<Result<User, EmailAlreadyExistsError>> {
+    const existingUser = await this.userRepository.findByEmail(data.email);
 
-    if (user) {
-      throw new EmailAlreadyExistsError();
+    if (existingUser) {
+      return err(new EmailAlreadyExistsError());
     }
 
     const hashedPassword = await this.passwordService.hash(data.password);
 
-    return this.userRepository.create({
+    const createdUser = await this.userRepository.create({
       ...data,
       password: hashedPassword,
     });
+
+    return ok(createdUser);
   }
 }

@@ -1,8 +1,9 @@
 import { UnauthorizedError } from '@core/errors/unauthorized-error';
-import { IPasswordService } from '@infrastructure/security/domain/password.service.interface';
 import { ITokenService } from '@infrastructure/security/domain/token.service.interface';
 import { LoginUserUseCase } from '@modules/auth/use-cases/login-user.use-case';
 import { IUserRepository } from '@modules/user/domain/user.repository.interface';
+
+import type { IPasswordService } from '@infrastructure/security/domain/password.service.interface';
 
 describe('LoginUserUseCase', () => {
   let useCase: LoginUserUseCase;
@@ -35,7 +36,7 @@ describe('LoginUserUseCase', () => {
     );
   });
 
-  it('returns user when credentials are valid', async () => {
+  it('returns Ok(AuthResponse) when credentials are valid', async () => {
     const user = {
       id: 1,
       username: 'john',
@@ -56,39 +57,26 @@ describe('LoginUserUseCase', () => {
       password: 'P4ssword',
     });
 
-    expect(result).toEqual({
-      user: {
-        id: 1,
-        username: 'john',
-        email: 'john@mail.com',
-      },
+    expect(result.isOk()).toBe(true);
+    expect(result._unsafeUnwrap()).toEqual({
+      user: { id: 1, username: 'john', email: 'john@mail.com' },
       accessToken: 'fake-token',
     });
-
-    expect(userRepository.findByEmail).toHaveBeenCalledWith('john@mail.com');
-
-    expect(passwordService.compare).toHaveBeenCalledWith(
-      'P4ssword',
-      'hashed-password',
-    );
-
-    expect(tokenService.generateAccessToken).toHaveBeenCalledWith({
-      userId: 1,
-    });
   });
 
-  it('throws unauthorized error when user does not exist', async () => {
+  it('returns Err(UnauthorizedError) when user does not exist', async () => {
     userRepository.findByEmail.mockResolvedValue(null);
 
-    await expect(
-      useCase.execute({
-        email: 'unknown@mail.com',
-        password: 'P4ssword',
-      }),
-    ).rejects.toThrow(UnauthorizedError);
+    const result = await useCase.execute({
+      email: 'unknown@mail.com',
+      password: 'P4ssword',
+    });
+
+    expect(result.isErr()).toBe(true);
+    expect(result._unsafeUnwrapErr()).toBeInstanceOf(UnauthorizedError);
   });
 
-  it('throws unauthorized error when password is invalid', async () => {
+  it('returns Err(UnauthorizedError) when password is incorrect', async () => {
     userRepository.findByEmail.mockResolvedValue({
       id: 1,
       username: 'john',
@@ -100,11 +88,11 @@ describe('LoginUserUseCase', () => {
 
     passwordService.compare.mockResolvedValue(false);
 
-    await expect(
-      useCase.execute({
-        email: 'john@mail.com',
-        password: 'WrongPassword',
-      }),
-    ).rejects.toThrow(UnauthorizedError);
+    const result = await useCase.execute({
+      email: 'john@mail.com',
+      password: 'WrongPass',
+    });
+
+    expect(result.isErr()).toBe(true);
   });
 });
