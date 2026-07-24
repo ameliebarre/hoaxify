@@ -1,16 +1,21 @@
-function getEnv(key: string): string {
-  const value = process.env[key];
+import 'dotenv/config';
+import { z } from 'zod';
 
-  if (!value) {
-    throw new Error(`Missing environment variable: ${key}`);
-  }
+const envSchema = z.object({
+  PORT: z.coerce.number().min(1000).default(8000),
+  JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
+  ENV: z
+    .union([
+      z.literal('development'),
+      z.literal('testing'),
+      z.literal('production'),
+    ])
+    .default('development'),
 
-  return value;
-}
+  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
+});
 
-export const env = {
-  POSTGRES_USER: getEnv('POSTGRES_USER'),
-  POSTGRES_DB: getEnv('POSTGRES_DB'),
-  POSTGRES_PASSWORD: getEnv('POSTGRES_PASSWORD'),
-  DATABASE_URL: getEnv('DATABASE_URL'),
-};
+const env = envSchema.parse(process.env);
+
+export default env;
+export type Env = z.infer<typeof envSchema>;

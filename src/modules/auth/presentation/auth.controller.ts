@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { injectable } from 'tsyringe';
+import { injectable, inject } from 'tsyringe';
 
 import { GetCurrentUserUseCase } from '@modules/auth/use-cases/get-current-user.use-case';
 import { LoginUserUseCase } from '@modules/auth/use-cases/login-user.use-case';
@@ -8,8 +8,13 @@ import { RegisterUserUseCase } from '@modules/auth/use-cases/register-user.use-c
 @injectable()
 export class AuthController {
   constructor(
+    @inject(RegisterUserUseCase)
     private readonly registerUserUseCase: RegisterUserUseCase,
+
+    @inject(LoginUserUseCase)
     private readonly loginUserUseCase: LoginUserUseCase,
+
+    @inject(GetCurrentUserUseCase)
     private readonly getCurrentUserUseCase: GetCurrentUserUseCase,
   ) {}
 

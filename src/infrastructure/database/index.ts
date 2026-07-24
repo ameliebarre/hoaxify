@@ -3,7 +3,7 @@ import 'dotenv/config';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 
-import { env } from '@core/config/env';
+import env from '@core/config/env';
 
 export const pool = new Pool({
   connectionString: env.DATABASE_URL,
