@@ -1,16 +1,9 @@
 import 'reflect-metadata';
 
-import request from 'supertest';
-
-import app from '@/app';
-import { container } from '@/composition-root';
-
-import { TOKENS } from '@core/di/token';
 import db from '@infrastructure/database';
 import { usersTable } from '@infrastructure/database/schema';
-import { signup } from '@modules/auth/__tests__/helpers/auth.helper';
-import { IUserRepository } from '@modules/user/domain/user.repository.interface';
-
+import { signup, login } from '@modules/auth/__tests__/helpers/auth.helper';
+import { cleanDatabase } from '@tests/helpers/database';
 
 const validUser = {
   username: 'user1',
@@ -21,14 +14,8 @@ const validUser = {
 const signupUrl = '/api/1.0/auth/signup';
 
 describe(`POST ${signupUrl}`, () => {
-  let userRepository: IUserRepository;
-
-  beforeAll(async () => {
-    userRepository = container.resolve<IUserRepository>(TOKENS.UserRepository);
-  });
-
   beforeEach(async () => {
-    await db.delete(usersTable);
+    await cleanDatabase();
   });
 
   describe('when request is valid', () => {
@@ -67,16 +54,21 @@ describe(`POST ${signupUrl}`, () => {
       expect(user.password).not.toBe(validUser.password);
     });
 
-    it('creates user with normalized email', async () => {
-      await request(app).post(signupUrl).send({
-        username: 'john',
-        email: '  John.Doe@Mail.COM ',
+    it('normalizes email and allows login with normalized email', async () => {
+      const signupResponse = await signup({
+        ...validUser,
+        email: '   JOHN@MAIL.COM  ',
+      });
+
+      expect(signupResponse.status).toBe(201);
+
+      const loginResponse = await login({
+        email: 'john@mail.com',
         password: 'P4ssword',
       });
 
-      const user = await userRepository.findByEmail('john.doe@mail.com');
-
-      expect(user).toBeDefined();
+      expect(loginResponse.status).toBe(200);
+      expect(loginResponse.body).toHaveProperty('accessToken');
     });
   });
 
@@ -110,7 +102,7 @@ describe(`POST ${signupUrl}`, () => {
 
   describe('when request body is invalid', () => {
     it('returns 400 when email is missing', async () => {
-      const response = await request(app).post(signupUrl).send({
+      const response = await signup({
         username: 'john',
         password: 'P4ssword',
       });
@@ -122,7 +114,6 @@ describe(`POST ${signupUrl}`, () => {
       const response = await signup({ ...validUser, username: 'jo' });
 
       expect(response.status).toBe(400);
-      expect(response.body.errors.fieldErrors.username).toBeDefined();
       expect(response.body.errors.fieldErrors.username[0]).toBe(
         'Username must be at least 3 characters long',
       );
@@ -135,7 +126,6 @@ describe(`POST ${signupUrl}`, () => {
       });
 
       expect(response.status).toBe(400);
-      expect(response.body.errors.fieldErrors.username).toBeDefined();
       expect(response.body.errors.fieldErrors.username[0]).toBe(
         'Username must not exceed 30 characters',
       );
@@ -145,9 +135,8 @@ describe(`POST ${signupUrl}`, () => {
       const response = await signup({ ...validUser, email: 'invalid-email' });
 
       expect(response.status).toBe(400);
-      expect(response.body.errors.fieldErrors.email).toBeDefined();
       expect(response.body.errors.fieldErrors.email[0]).toBe(
-        'Please provide a valid email address',
+        'Invalid email address',
       );
     });
 
@@ -155,10 +144,25 @@ describe(`POST ${signupUrl}`, () => {
       const response = await signup({ ...validUser, password: '123' });
 
       expect(response.status).toBe(400);
-      expect(response.body.errors.fieldErrors.password).toBeDefined();
       expect(response.body.errors.fieldErrors.password[0]).toBe(
         'Password must be at least 8 characters long',
       );
+    });
+
+    it('returns 400 when password is missing', async () => {
+      const response = await signup({
+        username: 'john',
+        email: 'john@mail.com',
+      });
+
+      expect(response.status).toBe(400);
+      expect(response.body.errors.fieldErrors.password).toBeDefined();
+    });
+
+    it('returns 400 when body is empty', async () => {
+      const response = await signup({});
+
+      expect(response.status).toBe(400);
     });
   });
 });

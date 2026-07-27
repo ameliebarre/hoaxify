@@ -11,6 +11,8 @@ import { RegisterUserUseCase } from '@modules/auth/use-cases/register-user.use-c
 import { IUserRepository } from '@modules/user/domain/user.repository.interface';
 import { UserRepository } from '@modules/user/infrastructure/user.repository';
 
+import { GetCurrentUserUseCase } from './modules/auth/use-cases/get-current-user.use-case';
+
 // ====================== ENREGISTREMENT ======================
 
 // Repositories
@@ -32,6 +34,9 @@ container.register(RegisterUserUseCase, {
 });
 container.register(LoginUserUseCase, {
   useClass: LoginUserUseCase,
+});
+container.register(GetCurrentUserUseCase, {
+  useClass: GetCurrentUserUseCase,
 });
 
 // Controllers

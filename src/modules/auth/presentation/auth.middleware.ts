@@ -11,7 +11,11 @@ export function authenticateMiddleware(tokenService: ITokenService) {
       throw new UnauthorizedError();
     }
 
-    const [, token] = authorization.split(' ');
+    const [scheme, token] = authorization.split(' ');
+
+    if (scheme !== 'Bearer' || !token) {
+      throw new UnauthorizedError();
+    }
 
     const payload = tokenService.verifyAccessToken(token);
 

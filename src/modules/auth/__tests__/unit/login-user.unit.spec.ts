@@ -57,9 +57,20 @@ describe('LoginUserUseCase', () => {
       password: 'P4ssword',
     });
 
+    expect(passwordService.compare).toHaveBeenCalledWith(
+      'P4ssword',
+      'hashed-password',
+    );
+    expect(tokenService.generateAccessToken).toHaveBeenCalledWith({
+      userId: 1,
+    });
     expect(result.isOk()).toBe(true);
     expect(result._unsafeUnwrap()).toEqual({
-      user: { id: 1, username: 'john', email: 'john@mail.com' },
+      user: {
+        id: 1,
+        username: 'john',
+        email: 'john@mail.com',
+      },
       accessToken: 'fake-token',
     });
   });
@@ -74,18 +85,20 @@ describe('LoginUserUseCase', () => {
 
     expect(result.isErr()).toBe(true);
     expect(result._unsafeUnwrapErr()).toBeInstanceOf(UnauthorizedError);
+    expect(userRepository.findByEmail).toHaveBeenCalledWith('unknown@mail.com');
   });
 
   it('returns Err(UnauthorizedError) when password is incorrect', async () => {
-    userRepository.findByEmail.mockResolvedValue({
+    const user = {
       id: 1,
       username: 'john',
       email: 'john@mail.com',
       password: 'hashed-password',
       createdAt: new Date(),
       updatedAt: new Date(),
-    });
+    };
 
+    userRepository.findByEmail.mockResolvedValue(user);
     passwordService.compare.mockResolvedValue(false);
 
     const result = await useCase.execute({
@@ -94,5 +107,7 @@ describe('LoginUserUseCase', () => {
     });
 
     expect(result.isErr()).toBe(true);
+    expect(result._unsafeUnwrapErr()).toBeInstanceOf(UnauthorizedError);
+    expect(tokenService.generateAccessToken).not.toHaveBeenCalled();
   });
 });

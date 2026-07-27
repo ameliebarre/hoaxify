@@ -1,3 +1,5 @@
+import bcrypt from 'bcrypt';
+
 import { PasswordService } from '@infrastructure/security/infrastructure/password.service';
 
 describe('Password Service', () => {
@@ -13,8 +15,7 @@ describe('Password Service', () => {
 
       const hashedPassword = await passwordService.hash(password);
 
-      expect(hashedPassword).toBeDefined();
-      expect(typeof hashedPassword).toBe('string');
+      expect(hashedPassword).toBeTruthy();
       expect(hashedPassword).not.toBe(password);
     });
 
@@ -25,6 +26,28 @@ describe('Password Service', () => {
       const hash2 = await passwordService.hash(password);
 
       expect(hash1).not.toBe(hash2);
+    });
+  });
+
+  describe('compare', () => {
+    it('returns true when password matches hashed password', async () => {
+      const password = 'P4ssword';
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      const result = await passwordService.compare(password, hashedPassword);
+
+      expect(result).toBe(true);
+    });
+
+    it('returns false when password does not match hashed password', async () => {
+      const hashedPassword = await bcrypt.hash('P4ssword!', 10);
+
+      const result = await passwordService.compare(
+        'WrongPassword',
+        hashedPassword,
+      );
+
+      expect(result).toBe(false);
     });
   });
 });

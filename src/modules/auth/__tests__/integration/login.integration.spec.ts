@@ -17,32 +17,45 @@ describe(`POST ${loginUrl}`, () => {
   describe('when request is valid', () => {
     it('returns 200 when credentials are valid', async () => {
       await signup({
+        ...user,
         username: 'john',
-        email: 'john@mail.com',
-        password: 'P4ssword',
       });
 
       const response = await login(user);
 
       expect(response.status).toBe(200);
-
       expect(response.body.accessToken).toBeDefined();
     });
 
     it('returns success message', async () => {
       await signup({
+        ...user,
         username: 'john',
-        email: 'john@mail.com',
-        password: 'P4ssword',
       });
 
-      const response = await login({
-        email: 'john@mail.com',
-        password: 'P4ssword',
-      });
+      const response = await login(user);
 
       expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        user: {
+          id: expect.any(Number),
+          username: 'john',
+          email: 'john@mail.com',
+        },
+        accessToken: expect.any(String),
+      });
+    });
 
+    it('normalizes email after signup with uppercase characters', async () => {
+      await signup({
+        ...user,
+        username: 'john',
+        email: '   JOHN@MAIL.COM   ',
+      });
+
+      const response = await login(user);
+
+      expect(response.status).toBe(200);
       expect(response.body).toEqual({
         user: {
           id: expect.any(Number),
@@ -66,9 +79,8 @@ describe(`POST ${loginUrl}`, () => {
 
     it('returns 401 when password is incorrect', async () => {
       await signup({
+        ...user,
         username: 'john',
-        email: 'john@mail.com',
-        password: 'P4ssword',
       });
 
       const response = await login({
@@ -81,9 +93,8 @@ describe(`POST ${loginUrl}`, () => {
 
     it('returns 400 when email is missing', async () => {
       await signup({
+        ...user,
         username: 'john',
-        email: 'john@mail.com',
-        password: 'P4ssword',
       });
 
       const response = await login({
@@ -95,9 +106,8 @@ describe(`POST ${loginUrl}`, () => {
 
     it('returns 400 when email is missing', async () => {
       await signup({
+        ...user,
         username: 'john',
-        email: 'john@mail.com',
-        password: 'P4ssword',
       });
 
       const response = await login({
@@ -109,9 +119,8 @@ describe(`POST ${loginUrl}`, () => {
 
     it('returns 400 when password is missing', async () => {
       await signup({
+        ...user,
         username: 'john',
-        email: 'john@mail.com',
-        password: 'P4ssword',
       });
 
       const response = await login({

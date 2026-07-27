@@ -10,6 +10,7 @@ const config: Config = {
     '^@modules/(.*)$': '<rootDir>/src/modules/$1',
     '^@infrastructure/(.*)$': '<rootDir>/src/infrastructure/$1',
     '^@middlewares/(.*)$': '<rootDir>/src/middlewares/$1',
+    '^@tests/(.*)$': '<rootDir>/tests/$1',
   },
   setupFilesAfterEnv: ['<rootDir>/tests/jest.setup.ts'],
   testMatch: ['**/*.unit.spec.ts', '**/*.integration.spec.ts'],

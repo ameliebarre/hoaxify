@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 
-import { EmailAlreadyExistsError } from '@core/errors/email-already-exists.error';
-import { UnauthorizedError } from '@core/errors/unauthorized-error';
+import { AppError } from '@core/errors/app-error';
 
 export function errorHandler(
   err: unknown,
@@ -9,14 +8,8 @@ export function errorHandler(
   res: Response,
   _next: NextFunction,
 ) {
-  if (err instanceof EmailAlreadyExistsError) {
-    return res.status(409).json({
-      message: err.message,
-    });
-  }
-
-  if (err instanceof UnauthorizedError) {
-    return res.status(401).json({
+  if (err instanceof AppError) {
+    return res.status(err.statusCode).json({
       message: err.message,
     });
   }

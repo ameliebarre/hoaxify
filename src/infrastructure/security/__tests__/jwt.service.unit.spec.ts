@@ -1,3 +1,7 @@
+import jwt from 'jsonwebtoken';
+
+import env from '@core/config/env';
+import { UnauthorizedError } from '@core/errors/unauthorized-error';
 import { JwtService } from '@infrastructure/security/infrastructure/jwt.service';
 
 describe('JwtService', () => {
@@ -24,7 +28,19 @@ describe('JwtService', () => {
     });
   });
 
-  it('throws when token is invalid', () => {
-    expect(() => jwtService.verifyAccessToken('invalid-token')).toThrow();
+  it('throws UnauthorizedError when token is invalid', () => {
+    expect(() => jwtService.verifyAccessToken('invalid-token')).toThrow(
+      UnauthorizedError,
+    );
+  });
+
+  it('throws UnauthorizedError when token has expired', async () => {
+    const expiredToken = jwt.sign({ userId: 1 }, env.JWT_SECRET, {
+      expiresIn: -1,
+    });
+
+    expect(() => jwtService.verifyAccessToken(expiredToken)).toThrow(
+      UnauthorizedError,
+    );
   });
 });

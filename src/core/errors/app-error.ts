@@ -1,12 +1,8 @@
-export class AppError extends Error {
-  statusCode: number;
-
-  constructor(message: string, statusCode: number) {
+export abstract class AppError extends Error {
+  constructor(
+    message: string,
+    public readonly statusCode: number,
+  ) {
     super(message);
-
-    this.name = this.constructor.name;
-    this.statusCode = statusCode;
-
-    Error.captureStackTrace(this, this.constructor);
   }
 }
