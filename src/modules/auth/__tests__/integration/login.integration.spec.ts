@@ -14,120 +14,134 @@ describe(`POST ${loginUrl}`, () => {
     await db.delete(usersTable);
   });
 
-  describe('when request is valid', () => {
-    it('returns 200 when credentials are valid', async () => {
+  describe('Given a registered user with valid credentials', () => {
+    beforeEach(async () => {
       await signup({
         ...user,
         username: 'john',
       });
-
-      const response = await login(user);
-
-      expect(response.status).toBe(200);
-      expect(response.body.accessToken).toBeDefined();
     });
 
-    it('returns success message', async () => {
-      await signup({
-        ...user,
-        username: 'john',
+    describe('When the user logs in with valid credentials', () => {
+      it('Then it should authenticate the user and return an access token', async () => {
+        const response = await login(user);
+
+        expect(response.status).toBe(200);
+        expect(response.body.accessToken).toBeDefined();
       });
 
-      const response = await login(user);
+      it('Then it should return the user information without exposing the password', async () => {
+        const response = await login(user);
 
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual({
-        user: {
-          id: expect.any(Number),
-          username: 'john',
-          email: 'john@mail.com',
-        },
-        accessToken: expect.any(String),
+        expect(response.status).toBe(200);
+
+        expect(response.body).toEqual({
+          user: {
+            id: expect.any(Number),
+            username: 'john',
+            email: 'john@mail.com',
+          },
+          accessToken: expect.any(String),
+        });
+
+        expect(response.body.user.password).toBeUndefined();
       });
     });
+  });
 
-    it('normalizes email after signup with uppercase characters', async () => {
+  describe('Given a user registered with an email containing uppercase characters and spaces', () => {
+    beforeEach(async () => {
       await signup({
         ...user,
         username: 'john',
         email: '   JOHN@MAIL.COM   ',
       });
+    });
 
-      const response = await login(user);
+    describe('When the user logs in with the normalized email', () => {
+      it('Then it should authenticate successfully', async () => {
+        const response = await login(user);
 
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual({
-        user: {
-          id: expect.any(Number),
-          username: 'john',
-          email: 'john@mail.com',
-        },
-        accessToken: expect.any(String),
+        expect(response.status).toBe(200);
+
+        expect(response.body).toEqual({
+          user: {
+            id: expect.any(Number),
+            username: 'john',
+            email: 'john@mail.com',
+          },
+          accessToken: expect.any(String),
+        });
       });
     });
   });
 
-  describe('when request is invalid', () => {
-    it('returns 401 when email does not exist', async () => {
-      const response = await login({
-        email: 'unknown@mail.com',
-        password: 'P4ssword',
+  describe('Given no registered user exists', () => {
+    describe('When the user tries to log in with an unknown email', () => {
+      it('Then it should return an invalid credentials error', async () => {
+        const response = await login({
+          email: 'unknown@mail.com',
+          password: 'P4ssword',
+        });
+
+        expect(response.status).toBe(401);
+
+        expect(response.body).toEqual({
+          error: {
+            type: 'InvalidCredentials',
+            message: 'Invalid email or password.',
+          },
+        });
       });
-
-      expect(response.status).toBe(401);
     });
+  });
 
-    it('returns 401 when password is incorrect', async () => {
+  describe('Given a registered user exists', () => {
+    beforeEach(async () => {
       await signup({
         ...user,
         username: 'john',
       });
-
-      const response = await login({
-        email: 'john@mail.com',
-        password: 'WrongPassword',
-      });
-
-      expect(response.status).toBe(401);
     });
 
-    it('returns 400 when email is missing', async () => {
-      await signup({
-        ...user,
-        username: 'john',
-      });
+    describe('When the user provides an incorrect password', () => {
+      it('Then it should return an invalid credentials error', async () => {
+        const response = await login({
+          email: user.email,
+          password: 'WrongPassword',
+        });
 
-      const response = await login({
-        password: 'WrongPassword',
-      });
+        expect(response.status).toBe(401);
 
-      expect(response.status).toBe(400);
+        expect(response.body).toEqual({
+          error: {
+            type: 'InvalidCredentials',
+            message: 'Invalid email or password.',
+          },
+        });
+      });
     });
 
-    it('returns 400 when email is missing', async () => {
-      await signup({
-        ...user,
-        username: 'john',
-      });
+    describe('When the user does not provide an email', () => {
+      it('Then it should return a validation error', async () => {
+        const response = await login({
+          password: user.password,
+        });
 
-      const response = await login({
-        password: 'P4ssword',
+        expect(response.status).toBe(400);
+        expect(response.body.error.type).toBe('ValidationError');
       });
-
-      expect(response.status).toBe(400);
     });
 
-    it('returns 400 when password is missing', async () => {
-      await signup({
-        ...user,
-        username: 'john',
-      });
+    describe('When the user does not provide a password', () => {
+      it('Then it should return a validation error', async () => {
+        const response = await login({
+          email: user.email,
+        });
 
-      const response = await login({
-        email: 'john@mail.com',
+        expect(response.status).toBe(400);
+        expect(response.body.error.type).toBe('ValidationError');
       });
-
-      expect(response.status).toBe(400);
     });
   });
 });

@@ -1,12 +1,13 @@
-export interface SignUpDto {
+export interface RegisteredUser {
+  id: number;
   username: string;
   email: string;
-  password: string;
 }
 
-export interface LoginDto {
+export interface CurrentUser {
+  id: number;
+  username: string;
   email: string;
-  password: string;
 }
 
 export interface AuthUser {

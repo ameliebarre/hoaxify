@@ -1,8 +1,7 @@
 import jwt from 'jsonwebtoken';
 
 import env from '@core/config/env';
-import { UnauthorizedError } from '@core/errors/unauthorized-error';
-import { JwtService } from '@infrastructure/security/infrastructure/jwt.service';
+import { JwtService } from '@infrastructure/security/jwt/jwt.service';
 
 describe('JwtService', () => {
   let jwtService: JwtService;
@@ -11,36 +10,82 @@ describe('JwtService', () => {
     jwtService = new JwtService();
   });
 
-  it('generates an access token', () => {
-    const token = jwtService.generateAccessToken({ userId: 1 });
+  describe('Given a valid user payload', () => {
+    describe('When generating a JWT token', () => {
+      it('Then it should return a valid token', async () => {
+        const result = await jwtService.sign({
+          userId: 1,
+        });
 
-    expect(token).toBeDefined();
-    expect(typeof token).toBe('string');
-  });
+        expect(result.isOk()).toBe(true);
 
-  it('verifies a valid token', () => {
-    const token = jwtService.generateAccessToken({ userId: 1 });
+        const token = result._unsafeUnwrap();
 
-    const payload = jwtService.verifyAccessToken(token);
-
-    expect(payload).toMatchObject({
-      userId: 1,
+        expect(token).toBeDefined();
+        expect(typeof token).toBe('string');
+      });
     });
   });
 
-  it('throws UnauthorizedError when token is invalid', () => {
-    expect(() => jwtService.verifyAccessToken('invalid-token')).toThrow(
-      UnauthorizedError,
-    );
+  describe('Given a valid JWT token', () => {
+    describe('When verifying the token', () => {
+      it('Then it should return the user payload', async () => {
+        const signResult = await jwtService.sign({
+          userId: 1,
+        });
+
+        expect(signResult.isOk()).toBe(true);
+
+        const token = signResult._unsafeUnwrap();
+
+        const verifyResult = await jwtService.verify(token);
+
+        expect(verifyResult.isOk()).toBe(true);
+
+        const payload = verifyResult._unsafeUnwrap();
+
+        expect(payload).toEqual({
+          userId: 1,
+        });
+      });
+    });
   });
 
-  it('throws UnauthorizedError when token has expired', async () => {
-    const expiredToken = jwt.sign({ userId: 1 }, env.JWT_SECRET, {
-      expiresIn: -1,
-    });
+  describe('Given an invalid JWT token', () => {
+    describe('When verifying the token', () => {
+      it('Then it should return a JwtVerifyError', async () => {
+        const result = await jwtService.verify('invalid-token');
 
-    expect(() => jwtService.verifyAccessToken(expiredToken)).toThrow(
-      UnauthorizedError,
-    );
+        expect(result.isErr()).toBe(true);
+
+        const error = result._unsafeUnwrapErr();
+
+        expect(error).toEqual({
+          type: 'JwtVerifyError',
+          message: expect.any(String),
+        });
+      });
+    });
+  });
+
+  describe('Given an expired JWT token', () => {
+    describe('When verifying the token', () => {
+      it('Then it should return a JwtVerifyError', async () => {
+        const expiredToken = jwt.sign({ userId: 1 }, env.JWT_SECRET, {
+          expiresIn: -1,
+        });
+
+        const result = await jwtService.verify(expiredToken);
+
+        expect(result.isErr()).toBe(true);
+
+        const error = result._unsafeUnwrapErr();
+
+        expect(error).toEqual({
+          type: 'JwtVerifyError',
+          message: expect.any(String),
+        });
+      });
+    });
   });
 });

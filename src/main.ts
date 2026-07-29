@@ -17,7 +17,7 @@ import app from '@/app';
 
 import env from '@core/config/env';
 
-const PORT = env.PORT ?? 8000;
+const PORT = env.PORT ?? 9000;
 
 app.listen(PORT, () => {
   console.log(`🚀 [Server]: Ready and listening on port ${PORT}`);

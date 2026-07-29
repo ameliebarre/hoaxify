@@ -14,79 +14,105 @@ describe(`GET ${meUrl}`, () => {
     await cleanDatabase();
   });
 
-  describe('when user is authenticated', () => {
-    it('returns 200 with current user', async () => {
-      const token = await authenticate();
+  describe('Given a user is authenticated', () => {
+    describe('When the user requests their profile', () => {
+      it('Then it should return the current user information', async () => {
+        const token = await authenticate();
 
-      const response = await request(app)
-        .get(meUrl)
-        .set('Authorization', `Bearer ${token}`);
+        const response = await request(app)
+          .get(meUrl)
+          .set('Authorization', `Bearer ${token}`);
 
-      expect(response.status).toBe(200);
+        expect(response.status).toBe(200);
 
-      expect(response.body).toEqual({
-        id: expect.any(Number),
-        username: 'john',
-        email: 'john@mail.com',
+        expect(response.body).toEqual({
+          id: expect.any(Number),
+          username: 'john',
+          email: 'john@mail.com',
+        });
+
+        expect(response.body.password).toBeUndefined();
       });
-
-      expect(response.body.password).toBeUndefined();
     });
   });
 
-  describe('when user is not authenticated', () => {
-    it('returns 401 without token', async () => {
-      const response = await request(app).get(meUrl);
+  describe('Given a user does not provide authentication credentials', () => {
+    describe('When the user requests their profile', () => {
+      it('Then it should return an unauthorized error', async () => {
+        const response = await request(app).get(meUrl);
 
-      expect(response.status).toBe(401);
-    });
-
-    it('returns 401 with invalid token', async () => {
-      const response = await request(app)
-        .get(meUrl)
-        .set('Authorization', 'Bearer invalid-token');
-
-      expect(response.status).toBe(401);
+        expect(response.status).toBe(401);
+      });
     });
   });
 
-  it('returns 401 when Authorization header does not use the Bearer scheme', async () => {
-    const token = await authenticate();
+  describe('Given a user provides an invalid authentication token', () => {
+    describe('When the user requests their profile', () => {
+      it('Then it should return an unauthorized error', async () => {
+        const response = await request(app)
+          .get(meUrl)
+          .set('Authorization', 'Bearer invalid-token');
 
-    const response = await request(app).get(meUrl).set('Authorization', token);
-
-    expect(response.status).toBe(401);
-  });
-
-  it('returns 401 when Bearer token is missing', async () => {
-    const response = await request(app)
-      .get(meUrl)
-      .set('Authorization', 'Bearer');
-
-    expect(response.status).toBe(401);
-  });
-
-  it('returns 401 when token has expired', async () => {
-    const expiredToken = jwt.sign({ userId: 1 }, env.JWT_SECRET, {
-      expiresIn: -1,
+        expect(response.status).toBe(401);
+      });
     });
-
-    const response = await request(app)
-      .get(meUrl)
-      .set('Authorization', `Bearer ${expiredToken}`);
-
-    expect(response.status).toBe(401);
   });
 
-  it('returns 401 when authenticated user no longer exists', async () => {
-    const token = await authenticate();
+  describe('Given an authentication header does not use the Bearer scheme', () => {
+    describe('When the user requests their profile', () => {
+      it('Then it should return an unauthorized error', async () => {
+        const token = await authenticate();
 
-    await cleanDatabase();
+        const response = await request(app)
+          .get(meUrl)
+          .set('Authorization', token);
 
-    const response = await request(app)
-      .get(meUrl)
-      .set('Authorization', `Bearer ${token}`);
+        expect(response.status).toBe(401);
+      });
+    });
+  });
 
-    expect(response.status).toBe(401);
+  describe('Given an authentication header contains an empty Bearer token', () => {
+    describe('When the user requests their profile', () => {
+      it('Then it should return an unauthorized error', async () => {
+        const response = await request(app)
+          .get(meUrl)
+          .set('Authorization', 'Bearer');
+
+        expect(response.status).toBe(401);
+      });
+    });
+  });
+
+  describe('Given a user has an expired authentication token', () => {
+    describe('When the user requests their profile', () => {
+      it('Then it should return an unauthorized error', async () => {
+        const expiredToken = jwt.sign({ userId: 1 }, env.JWT_SECRET, {
+          expiresIn: -1,
+        });
+
+        const response = await request(app)
+          .get(meUrl)
+          .set('Authorization', `Bearer ${expiredToken}`);
+
+        expect(response.status).toBe(401);
+      });
+    });
+  });
+
+  describe('Given a user was authenticated but their account no longer exists', () => {
+    describe('When the user requests their profile', () => {
+      it('Then it should return an unauthorized error', async () => {
+        const token = await authenticate();
+
+        await cleanDatabase();
+
+        const response = await request(app)
+          .get(meUrl)
+          .set('Authorization', `Bearer ${token}`);
+
+        expect(response.status).toBe(401);
+      });
+    });
   });
 });

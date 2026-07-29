@@ -1,26 +1,51 @@
 import { NextFunction, Request, Response } from 'express';
 
-import { UnauthorizedError } from '@core/errors/unauthorized-error';
-import { ITokenService } from '@infrastructure/security/domain/token.service.interface';
+import { mapErrorToHttp } from '@core/errors/http/error-response.mapper';
 
-export function authenticateMiddleware(tokenService: ITokenService) {
-  return (req: Request, res: Response, next: NextFunction): void => {
+import type { IJwtService } from '@infrastructure/security/jwt/jwt.service.interface';
+
+export function authenticateMiddleware(jwtService: IJwtService) {
+  return async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
     const authorization = req.headers.authorization;
 
     if (!authorization) {
-      throw new UnauthorizedError();
+      const response = mapErrorToHttp({
+        type: 'Unauthorized',
+        message: 'Authentication required',
+      });
+
+      res.status(response.status).json(response.body);
+      return;
     }
 
     const [scheme, token] = authorization.split(' ');
 
     if (scheme !== 'Bearer' || !token) {
-      throw new UnauthorizedError();
+      const response = mapErrorToHttp({
+        type: 'Unauthorized',
+        message: 'Authentication required',
+      });
+
+      res.status(response.status).json(response.body);
+      return;
     }
 
-    const payload = tokenService.verifyAccessToken(token);
+    const result = await jwtService.verify(token);
 
-    req.user = payload;
+    result.match(
+      (payload) => {
+        req.user = payload;
+        next();
+      },
+      (error) => {
+        const response = mapErrorToHttp(error);
 
-    next();
+        res.status(response.status).json(response.body);
+      },
+    );
   };
 }

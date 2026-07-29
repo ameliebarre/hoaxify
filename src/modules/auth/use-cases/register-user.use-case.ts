@@ -1,12 +1,13 @@
-import { Result, ok, err } from 'neverthrow';
+import { errAsync, ResultAsync } from 'neverthrow';
 import { injectable, inject } from 'tsyringe';
 
 import { TOKENS } from '@core/di/token';
-import { EmailAlreadyExistsError } from '@core/errors/email-already-exists.error';
-import { SignUpDto } from '@modules/auth/domain/auth.types';
-import { User } from '@modules/user/domain/user.types';
+import { RegisteredUser } from '@modules/auth/domain/auth.types';
+import { AuthErrors } from '@modules/auth/domain/errors/auth-errors';
+import { SignupError } from '@modules/auth/domain/errors/signup-user.error';
+import { SignupInput } from '@modules/auth/presentation/validators/signup.validator';
 
-import type { IPasswordService } from '@infrastructure/security/domain/password.service.interface';
+import type { IPasswordService } from '@infrastructure/security/password/password.service.interface';
 import type { IUserRepository } from '@modules/user/domain/user.repository.interface';
 
 @injectable()
@@ -19,22 +20,33 @@ export class RegisterUserUseCase {
     private readonly passwordService: IPasswordService,
   ) {}
 
-  async execute(
-    data: SignUpDto,
-  ): Promise<Result<User, EmailAlreadyExistsError>> {
-    const existingUser = await this.userRepository.findByEmail(data.email);
+  execute(data: SignupInput): ResultAsync<RegisteredUser, SignupError> {
+    return this.userRepository
+      .findByEmail(data.email)
+      .andThen((existingUser) => {
+        if (existingUser) {
+          return errAsync(AuthErrors.emailAlreadyExists(data.email));
+        }
 
-    if (existingUser) {
-      return err(new EmailAlreadyExistsError());
-    }
+        return this.userRepository.findByUsername(data.username);
+      })
+      .andThen((existingUser) => {
+        if (existingUser) {
+          return errAsync(AuthErrors.usernameAlreadyExists(data.username));
+        }
 
-    const hashedPassword = await this.passwordService.hash(data.password);
-
-    const createdUser = await this.userRepository.create({
-      ...data,
-      password: hashedPassword,
-    });
-
-    return ok(createdUser);
+        return this.passwordService.hash(data.password);
+      })
+      .andThen((hashedPassword) =>
+        this.userRepository.create({
+          ...data,
+          password: hashedPassword,
+        }),
+      )
+      .map((user) => ({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+      }));
   }
 }

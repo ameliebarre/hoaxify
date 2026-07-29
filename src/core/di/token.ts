@@ -1,5 +1,5 @@
 export const TOKENS = {
   PasswordService: Symbol.for('PasswordService'),
   UserRepository: Symbol.for('UserRepository'),
-  TokenService: Symbol.for('TokenService'),
+  JwtService: Symbol.for('JwtService'),
 } as const;

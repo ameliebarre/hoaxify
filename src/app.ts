@@ -2,7 +2,7 @@ import '@/composition-root';
 import express from 'express';
 
 import apiRouter from '@core/config/router';
-import { errorHandler } from '@middlewares/error-handler';
+import { errorMiddleware } from '@middlewares/error.middleware';
 
 const app = express();
 
@@ -10,6 +10,6 @@ app.use(express.json());
 
 app.use('/api/1.0', apiRouter);
 
-app.use(errorHandler);
+app.use(errorMiddleware);
 
 export default app;

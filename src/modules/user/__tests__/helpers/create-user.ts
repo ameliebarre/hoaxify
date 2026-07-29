@@ -1,9 +1,11 @@
 import { UserRepository } from '../../infrastructure/user.repository';
 
-export async function createUser(repository: UserRepository) {
-  return await repository.create({
+export const createUser = async (repository: UserRepository) => {
+  const result = await repository.create({
     username: 'john',
     email: 'john@mail.com',
     password: 'hashed-password',
   });
-}
+
+  return result._unsafeUnwrap();
+};

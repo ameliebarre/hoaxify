@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { z } from 'zod';
 
 const envSchema = z.object({
-  PORT: z.coerce.number().min(1000).default(8000),
+  PORT: z.coerce.number().min(1000).default(9000),
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
   ENV: z
     .union([

@@ -1,91 +1,157 @@
 import { NextFunction, Request, Response } from 'express';
+import { errAsync, okAsync } from 'neverthrow';
 
-import { UnauthorizedError } from '@core/errors/unauthorized-error';
-import { ITokenService } from '@infrastructure/security/domain/token.service.interface';
 import { authenticateMiddleware } from '@modules/auth/presentation/auth.middleware';
 
-describe('authentication middleware', () => {
-  let tokenService: jest.Mocked<ITokenService>;
+import type { IJwtService } from '@infrastructure/security/jwt/jwt.service.interface';
+
+describe('authenticateMiddleware', () => {
+  let jwtService: jest.Mocked<IJwtService>;
   let req: Partial<Request>;
   let res: Partial<Response>;
   let next: jest.MockedFunction<NextFunction>;
 
   beforeEach(() => {
-    tokenService = {
-      verifyAccessToken: jest.fn(),
-      generateAccessToken: jest.fn(),
+    jwtService = {
+      sign: jest.fn(),
+      verify: jest.fn(),
     };
 
     req = {
       headers: {},
     };
 
-    res = {};
+    res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    };
 
     next = jest.fn();
   });
 
-  describe('when token is missing', () => {
-    it('throws unauthorized error', () => {
-      const authMiddleware = authenticateMiddleware(tokenService);
+  describe('Given no Authorization header is provided', () => {
+    describe('When the middleware is executed', () => {
+      it('Then it should return a 401 response', async () => {
+        const middleware = authenticateMiddleware(jwtService);
 
-      expect(() =>
-        authMiddleware(req as Request, res as Response, next),
-      ).toThrow(UnauthorizedError);
+        await middleware(req as Request, res as Response, next);
 
-      expect(tokenService.verifyAccessToken).not.toHaveBeenCalled();
+        expect(jwtService.verify).not.toHaveBeenCalled();
 
-      expect(next).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(401);
+        expect(res.json).toHaveBeenCalled();
+
+        expect(next).not.toHaveBeenCalled();
+      });
     });
   });
 
-  describe('when token is invalid', () => {
-    it('throws unauthorized error', () => {
+  describe('Given the Authorization header does not use the Bearer scheme', () => {
+    beforeEach(() => {
+      req.headers = {
+        authorization: 'Basic token',
+      };
+    });
+
+    describe('When the middleware is executed', () => {
+      it('Then it should return a 401 response', async () => {
+        const middleware = authenticateMiddleware(jwtService);
+
+        await middleware(req as Request, res as Response, next);
+
+        expect(jwtService.verify).not.toHaveBeenCalled();
+
+        expect(res.status).toHaveBeenCalledWith(401);
+        expect(res.json).toHaveBeenCalled();
+
+        expect(next).not.toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('Given the Bearer token is missing', () => {
+    beforeEach(() => {
+      req.headers = {
+        authorization: 'Bearer',
+      };
+    });
+
+    describe('When the middleware is executed', () => {
+      it('Then it should return a 401 response', async () => {
+        const middleware = authenticateMiddleware(jwtService);
+
+        await middleware(req as Request, res as Response, next);
+
+        expect(jwtService.verify).not.toHaveBeenCalled();
+
+        expect(res.status).toHaveBeenCalledWith(401);
+        expect(res.json).toHaveBeenCalled();
+
+        expect(next).not.toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('Given the token is invalid', () => {
+    beforeEach(() => {
       req.headers = {
         authorization: 'Bearer invalid-token',
       };
 
-      tokenService.verifyAccessToken.mockImplementation(() => {
-        throw new UnauthorizedError();
+      jwtService.verify.mockReturnValue(
+        errAsync({
+          type: 'JwtVerifyError',
+          message: 'Invalid token',
+        }),
+      );
+    });
+
+    describe('When the middleware is executed', () => {
+      it('Then it should return a 401 response', async () => {
+        const middleware = authenticateMiddleware(jwtService);
+
+        await middleware(req as Request, res as Response, next);
+
+        expect(jwtService.verify).toHaveBeenCalledWith('invalid-token');
+
+        expect(res.status).toHaveBeenCalledWith(401);
+        expect(res.json).toHaveBeenCalled();
+
+        expect(next).not.toHaveBeenCalled();
       });
-
-      const middleware = authenticateMiddleware(tokenService);
-
-      expect(() => middleware(req as Request, res as Response, next)).toThrow(
-        UnauthorizedError,
-      );
-
-      expect(tokenService.verifyAccessToken).toHaveBeenCalledWith(
-        'invalid-token',
-      );
-
-      expect(next).not.toHaveBeenCalled();
     });
   });
 
-  describe('when token is valid', () => {
-    it('adds user to request and calls next', async () => {
+  describe('Given the token is valid', () => {
+    beforeEach(() => {
       req.headers = {
         authorization: 'Bearer valid-token',
       };
 
-      tokenService.verifyAccessToken.mockReturnValue({
-        userId: 1,
-      });
-
-      const middleware = authenticateMiddleware(tokenService);
-
-      middleware(req as Request, res as Response, next);
-
-      expect(tokenService.verifyAccessToken).toHaveBeenCalledWith(
-        'valid-token',
+      jwtService.verify.mockReturnValue(
+        okAsync({
+          userId: 1,
+        }),
       );
+    });
 
-      expect(req.user).toEqual({
-        userId: 1,
+    describe('When the middleware is executed', () => {
+      it('Then it should attach the authenticated user to the request', async () => {
+        const middleware = authenticateMiddleware(jwtService);
+
+        await middleware(req as Request, res as Response, next);
+
+        expect(jwtService.verify).toHaveBeenCalledWith('valid-token');
+
+        expect(req.user).toEqual({
+          userId: 1,
+        });
+
+        expect(next).toHaveBeenCalledTimes(1);
+
+        expect(res.status).not.toHaveBeenCalled();
+        expect(res.json).not.toHaveBeenCalled();
       });
-
-      expect(next).toHaveBeenCalled();
     });
   });
 });

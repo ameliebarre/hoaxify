@@ -1,116 +1,172 @@
-import { EmailAlreadyExistsError } from '@core/errors/email-already-exists.error';
+import { okAsync } from 'neverthrow';
+
 import { createUser } from '@modules/auth/__tests__/factories/user.factory';
 import { RegisterUserUseCase } from '@modules/auth/use-cases/register-user.use-case';
-import { IUserRepository } from '@modules/user/domain/user.repository.interface';
 
-import type { IPasswordService } from '@infrastructure/security/domain/password.service.interface';
+import type { IPasswordService } from '@infrastructure/security/password/password.service.interface';
+import type { IUserRepository } from '@modules/user/domain/user.repository.interface';
 
 describe('RegisterUserUseCase', () => {
-  const userRepository: jest.Mocked<IUserRepository> = {
-    findByEmail: jest.fn(),
-    create: jest.fn(),
-    findById: jest.fn(),
-  };
+  let useCase: RegisterUserUseCase;
 
-  const passwordService: jest.Mocked<IPasswordService> = {
-    hash: jest.fn(),
-    compare: jest.fn(),
-  };
+  let userRepository: jest.Mocked<IUserRepository>;
+  let passwordService: jest.Mocked<IPasswordService>;
 
-  const user = {
+  const signupData = {
     username: 'john',
     email: 'john@mail.com',
     password: 'P4ssword',
   };
 
-  const createdUser = {
+  const persistedUser = {
     id: 1,
     username: 'john',
     email: 'john@mail.com',
     password: 'hashed-password',
     createdAt: new Date(),
-    updatedAt: new Date(),
+    updatedAt: null,
   };
 
-  let useCase: RegisterUserUseCase;
-
   beforeEach(() => {
-    jest.clearAllMocks();
+    userRepository = {
+      create: jest.fn(),
+      findByEmail: jest.fn(),
+      findByUsername: jest.fn(),
+      findById: jest.fn(),
+    };
+
+    passwordService = {
+      hash: jest.fn(),
+      compare: jest.fn(),
+    };
+
     useCase = new RegisterUserUseCase(userRepository, passwordService);
   });
 
-  describe('when email does not exist', () => {
-    it('returns Ok(User)', async () => {
-      userRepository.findByEmail.mockResolvedValue(null);
-      passwordService.hash.mockResolvedValue('hashed-password');
-      userRepository.create.mockResolvedValue(createdUser);
+  describe('Given the email and username are available', () => {
+    beforeEach(() => {
+      userRepository.findByEmail.mockReturnValue(okAsync(null));
 
-      const result = await useCase.execute(user);
+      userRepository.findByUsername.mockReturnValue(okAsync(null));
 
-      expect(result.isOk()).toBe(true);
-      expect(result._unsafeUnwrap()).toEqual(createdUser);
+      passwordService.hash.mockReturnValue(okAsync('hashed-password'));
+
+      userRepository.create.mockReturnValue(okAsync(persistedUser));
     });
 
-    it('hashes the password before creating the user', async () => {
-      userRepository.findByEmail.mockResolvedValue(null);
-      passwordService.hash.mockResolvedValue('hashed-password');
+    describe('When registering a new user', () => {
+      it('Then it should return the registered user', async () => {
+        const result = await useCase.execute(signupData);
 
-      await useCase.execute(user);
+        expect(result.isOk()).toBe(true);
 
-      expect(passwordService.hash).toHaveBeenCalledWith(user.password);
-    });
-
-    it('creates the user with hashed password', async () => {
-      userRepository.findByEmail.mockResolvedValue(null);
-      passwordService.hash.mockResolvedValue('hashed-password');
-
-      await useCase.execute(user);
-
-      expect(userRepository.create).toHaveBeenCalledWith({
-        ...user,
-        password: 'hashed-password',
+        expect(result._unsafeUnwrap()).toEqual({
+          id: 1,
+          username: 'john',
+          email: 'john@mail.com',
+        });
       });
-    });
 
-    it('checks whether the email already exists', async () => {
-      userRepository.findByEmail.mockResolvedValue(null);
+      it('Then it should verify that the email is available', async () => {
+        await useCase.execute(signupData);
 
-      await useCase.execute(user);
+        expect(userRepository.findByEmail).toHaveBeenCalledWith(
+          signupData.email,
+        );
+      });
 
-      expect(userRepository.findByEmail).toHaveBeenCalledWith(user.email);
+      it('Then it should verify that the username is available', async () => {
+        await useCase.execute(signupData);
+
+        expect(userRepository.findByUsername).toHaveBeenCalledWith(
+          signupData.username,
+        );
+      });
+
+      it('Then it should hash the password', async () => {
+        await useCase.execute(signupData);
+
+        expect(passwordService.hash).toHaveBeenCalledWith(signupData.password);
+      });
+
+      it('Then it should create the user with the hashed password', async () => {
+        await useCase.execute(signupData);
+
+        expect(userRepository.create).toHaveBeenCalledWith({
+          ...signupData,
+          password: 'hashed-password',
+        });
+      });
     });
   });
 
-  describe('when email already exists', () => {
-    it('returns Err(EmailAlreadyExistsError)', async () => {
-      userRepository.findByEmail.mockResolvedValue(
-        createUser({ username: 'existing-user' }),
+  describe('Given the email already exists', () => {
+    beforeEach(() => {
+      userRepository.findByEmail.mockReturnValue(
+        okAsync(createUser({ username: 'existing-user' })),
       );
-
-      const result = await useCase.execute(user);
-
-      expect(result.isErr()).toBe(true);
-      expect(result._unsafeUnwrapErr()).toBeInstanceOf(EmailAlreadyExistsError);
     });
 
-    it('does not hash password', async () => {
-      userRepository.findByEmail.mockResolvedValue(
-        createUser({ username: 'existing-user' }),
-      );
+    describe('When registering a new user', () => {
+      it('Then it should return an EmailAlreadyExists error', async () => {
+        const result = await useCase.execute(signupData);
 
-      await useCase.execute(user);
+        expect(result.isErr()).toBe(true);
 
-      expect(passwordService.hash).not.toHaveBeenCalled();
+        expect(result._unsafeUnwrapErr()).toMatchObject({
+          type: 'EmailAlreadyExists',
+        });
+      });
+
+      it('Then it should not check the username', async () => {
+        await useCase.execute(signupData);
+
+        expect(userRepository.findByUsername).not.toHaveBeenCalled();
+      });
+
+      it('Then it should not hash the password', async () => {
+        await useCase.execute(signupData);
+
+        expect(passwordService.hash).not.toHaveBeenCalled();
+      });
+
+      it('Then it should not create the user', async () => {
+        await useCase.execute(signupData);
+
+        expect(userRepository.create).not.toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('Given the username already exists', () => {
+    beforeEach(() => {
+      userRepository.findByEmail.mockReturnValue(okAsync(null));
+
+      userRepository.findByUsername.mockReturnValue(okAsync(createUser()));
     });
 
-    it('does not create user', async () => {
-      userRepository.findByEmail.mockResolvedValue(
-        createUser({ username: 'existing-user' }),
-      );
+    describe('When registering a new user', () => {
+      it('Then it should return a UsernameAlreadyExists error', async () => {
+        const result = await useCase.execute(signupData);
 
-      await useCase.execute(user);
+        expect(result.isErr()).toBe(true);
 
-      expect(userRepository.create).not.toHaveBeenCalled();
+        expect(result._unsafeUnwrapErr()).toMatchObject({
+          type: 'UsernameAlreadyExists',
+        });
+      });
+
+      it('Then it should not hash the password', async () => {
+        await useCase.execute(signupData);
+
+        expect(passwordService.hash).not.toHaveBeenCalled();
+      });
+
+      it('Then it should not create the user', async () => {
+        await useCase.execute(signupData);
+
+        expect(userRepository.create).not.toHaveBeenCalled();
+      });
     });
   });
 });

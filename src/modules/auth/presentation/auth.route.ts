@@ -4,34 +4,24 @@ import express from 'express';
 import { container } from '@/composition-root';
 
 import { TOKENS } from '@core/di/token';
-import { ITokenService } from '@infrastructure/security/domain/token.service.interface';
-import { validate } from '@middlewares/validate';
+import { IJwtService } from '@infrastructure/security/jwt/jwt.service.interface';
+import { validate } from '@middlewares/validate.middleware';
 import { AuthController } from '@modules/auth/presentation/auth.controller';
 import { authenticateMiddleware } from '@modules/auth/presentation/auth.middleware';
-import {
-  loginSchema,
-  signupSchema,
-} from '@modules/auth/presentation/auth.validation';
+import { loginSchema } from '@modules/auth/presentation/validators/login.validator';
+import { signupSchema } from '@modules/auth/presentation/validators/signup.validator';
 
 const router = express.Router();
 
 const authController = container.resolve<AuthController>(AuthController);
-const tokenService = container.resolve<ITokenService>(TOKENS.TokenService);
+const jwtService = container.resolve<IJwtService>(TOKENS.JwtService);
 
-const authenticate = authenticateMiddleware(tokenService);
+const authenticate = authenticateMiddleware(jwtService);
 
-router.post(
-  '/signup',
-  validate(signupSchema),
-  authController.signup.bind(authController),
-);
+router.post('/signup', validate(signupSchema), authController.signup);
 
-router.post(
-  '/login',
-  validate(loginSchema),
-  authController.login.bind(authController),
-);
+router.post('/login', validate(loginSchema), authController.login);
 
-router.get('/me', authenticate, authController.me.bind(authController));
+router.get('/me', authenticate, authController.me);
 
 export default router;

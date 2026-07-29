@@ -1,10 +1,11 @@
 import { container } from 'tsyringe';
 
+import { JwtService } from '@/infrastructure/security/jwt/jwt.service';
+import { IJwtService } from '@/infrastructure/security/jwt/jwt.service.interface';
+import { PasswordService } from '@/infrastructure/security/password/password.service';
+import { IPasswordService } from '@/infrastructure/security/password/password.service.interface';
+
 import { TOKENS } from '@core/di/token';
-import { IPasswordService } from '@infrastructure/security/domain/password.service.interface';
-import { ITokenService } from '@infrastructure/security/domain/token.service.interface';
-import { JwtService } from '@infrastructure/security/infrastructure/jwt.service';
-import { PasswordService } from '@infrastructure/security/infrastructure/password.service';
 import { AuthController } from '@modules/auth/presentation/auth.controller';
 import { LoginUserUseCase } from '@modules/auth/use-cases/login-user.use-case';
 import { RegisterUserUseCase } from '@modules/auth/use-cases/register-user.use-case';
@@ -26,7 +27,7 @@ container.registerSingleton<IPasswordService>(
   TOKENS.PasswordService,
   PasswordService,
 );
-container.registerSingleton<ITokenService>(TOKENS.TokenService, JwtService);
+container.registerSingleton<IJwtService>(TOKENS.JwtService, JwtService);
 
 // Use Cases
 container.register(RegisterUserUseCase, {
