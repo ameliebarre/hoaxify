@@ -87,7 +87,7 @@ describe(`GET ${meUrl}`, () => {
   describe('Given a user has an expired authentication token', () => {
     describe('When the user requests their profile', () => {
       it('Then it should return an unauthorized error', async () => {
-        const expiredToken = jwt.sign({ userId: 1 }, env.JWT_SECRET, {
+        const expiredToken = jwt.sign({ userId: 1 }, env.ACCESS_SECRET, {
           expiresIn: -1,
         });
 

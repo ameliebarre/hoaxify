@@ -1,6 +1,5 @@
+import { DatabaseError } from '@core/errors/domain/database.error';
 import { ResultAsync } from 'neverthrow';
-
-import { DatabaseError } from '@/core/errors/domain/database.error';
 
 import { NewUser, User } from './user.types';
 

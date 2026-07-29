@@ -8,6 +8,7 @@ export function mapErrorToHttp(error: AppError) {
     case 'InvalidCredentials':
     case 'UserNotFound':
     case 'JwtVerifyError':
+    case 'InvalidRefreshToken':
       return httpError(401, error);
 
     // 409 Conflict

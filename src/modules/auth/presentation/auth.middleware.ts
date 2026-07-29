@@ -34,7 +34,7 @@ export function authenticateMiddleware(jwtService: IJwtService) {
       return;
     }
 
-    const result = await jwtService.verify(token);
+    const result = await jwtService.verifyAccessToken(token);
 
     result.match(
       (payload) => {

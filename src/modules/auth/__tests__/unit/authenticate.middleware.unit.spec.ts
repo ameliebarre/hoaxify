@@ -13,8 +13,10 @@ describe('authenticateMiddleware', () => {
 
   beforeEach(() => {
     jwtService = {
-      sign: jest.fn(),
-      verify: jest.fn(),
+      generateAccessToken: jest.fn(),
+      generateRefreshToken: jest.fn(),
+      verifyAccessToken: jest.fn(),
+      verifyRefreshToken: jest.fn(),
     };
 
     req = {
@@ -36,7 +38,7 @@ describe('authenticateMiddleware', () => {
 
         await middleware(req as Request, res as Response, next);
 
-        expect(jwtService.verify).not.toHaveBeenCalled();
+        expect(jwtService.verifyAccessToken).not.toHaveBeenCalled();
 
         expect(res.status).toHaveBeenCalledWith(401);
         expect(res.json).toHaveBeenCalled();
@@ -59,7 +61,7 @@ describe('authenticateMiddleware', () => {
 
         await middleware(req as Request, res as Response, next);
 
-        expect(jwtService.verify).not.toHaveBeenCalled();
+        expect(jwtService.verifyAccessToken).not.toHaveBeenCalled();
 
         expect(res.status).toHaveBeenCalledWith(401);
         expect(res.json).toHaveBeenCalled();
@@ -82,7 +84,7 @@ describe('authenticateMiddleware', () => {
 
         await middleware(req as Request, res as Response, next);
 
-        expect(jwtService.verify).not.toHaveBeenCalled();
+        expect(jwtService.verifyAccessToken).not.toHaveBeenCalled();
 
         expect(res.status).toHaveBeenCalledWith(401);
         expect(res.json).toHaveBeenCalled();
@@ -98,7 +100,7 @@ describe('authenticateMiddleware', () => {
         authorization: 'Bearer invalid-token',
       };
 
-      jwtService.verify.mockReturnValue(
+      jwtService.verifyAccessToken.mockReturnValue(
         errAsync({
           type: 'JwtVerifyError',
           message: 'Invalid token',
@@ -112,7 +114,9 @@ describe('authenticateMiddleware', () => {
 
         await middleware(req as Request, res as Response, next);
 
-        expect(jwtService.verify).toHaveBeenCalledWith('invalid-token');
+        expect(jwtService.verifyAccessToken).toHaveBeenCalledWith(
+          'invalid-token',
+        );
 
         expect(res.status).toHaveBeenCalledWith(401);
         expect(res.json).toHaveBeenCalled();
@@ -128,7 +132,7 @@ describe('authenticateMiddleware', () => {
         authorization: 'Bearer valid-token',
       };
 
-      jwtService.verify.mockReturnValue(
+      jwtService.verifyAccessToken.mockReturnValue(
         okAsync({
           userId: 1,
         }),
@@ -141,7 +145,9 @@ describe('authenticateMiddleware', () => {
 
         await middleware(req as Request, res as Response, next);
 
-        expect(jwtService.verify).toHaveBeenCalledWith('valid-token');
+        expect(jwtService.verifyAccessToken).toHaveBeenCalledWith(
+          'valid-token',
+        );
 
         expect(req.user).toEqual({
           userId: 1,

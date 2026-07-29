@@ -1,6 +1,5 @@
+import { DatabaseError } from '@core/errors/domain/database.error';
 import { ResultAsync } from 'neverthrow';
-
-import { DatabaseError } from '@/core/errors/domain/database.error';
 
 export function fromDatabasePromise<T>(
   promise: Promise<T>,

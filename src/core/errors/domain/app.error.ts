@@ -1,13 +1,13 @@
+import { DatabaseError } from '@core/errors/domain/database.error';
+import { JwtError } from '@core/errors/domain/jwt.error';
+import { PasswordError } from '@core/errors/domain/password.error';
+import { UnauthorizedError } from '@core/errors/domain/unauthorized.error';
 import {
   SignupAuthError,
   LoginAuthError,
-} from '@/modules/auth/domain/errors/auth.error';
-import { UserError } from '@/modules/user/domain/errors/user.error';
-
-import { DatabaseError } from './database.error';
-import { JwtError } from './jwt.error';
-import { PasswordError } from './password.error';
-import { UnauthorizedError } from './unauthorized.error';
+} from '@modules/auth/domain/errors/auth.error';
+import { RefreshTokenError } from '@modules/auth/domain/errors/refresh-token.error';
+import { UserError } from '@modules/user/domain/errors/user.error';
 
 export type AppError =
   | DatabaseError
@@ -16,4 +16,5 @@ export type AppError =
   | UnauthorizedError
   | SignupAuthError
   | LoginAuthError
-  | UserError;
+  | UserError
+  | RefreshTokenError;

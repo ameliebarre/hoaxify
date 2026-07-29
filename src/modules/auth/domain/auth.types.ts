@@ -14,13 +14,12 @@ export interface AuthUser {
   userId: number;
 }
 
-export interface PublicUser {
-  id: number;
-  username: string;
-  email: string;
-}
-
-export interface AuthResponse {
-  user: PublicUser;
+export type LoginResponse = {
+  user: {
+    id: number;
+    username: string;
+    email: string;
+  };
   accessToken: string;
-}
+  refreshToken: string;
+};

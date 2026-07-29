@@ -30,6 +30,19 @@ describe(`POST ${loginUrl}`, () => {
         expect(response.body.accessToken).toBeDefined();
       });
 
+      it('Then it sets refresh token in httpOnly cookie', async () => {
+        await signup({
+          ...user,
+          username: 'john',
+        });
+
+        const response = await login(user);
+
+        expect(response.status).toBe(200);
+        expect(response.headers['set-cookie']).toBeDefined();
+        expect(response.headers['set-cookie'][0]).toContain('refreshToken=');
+      });
+
       it('Then it should return the user information without exposing the password', async () => {
         const response = await login(user);
 

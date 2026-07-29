@@ -4,6 +4,7 @@ import { LoginUserUseCase } from '@modules/auth/use-cases/login-user.use-case';
 
 import type { IJwtService } from '@infrastructure/security/jwt/jwt.service.interface';
 import type { IPasswordService } from '@infrastructure/security/password/password.service.interface';
+import type { IRefreshTokenRepository } from '@modules/auth/domain/refresh-token.repository.interface';
 import type { IUserRepository } from '@modules/user/domain/user.repository.interface';
 
 describe('LoginUserUseCase', () => {
@@ -12,6 +13,7 @@ describe('LoginUserUseCase', () => {
   let userRepository: jest.Mocked<IUserRepository>;
   let passwordService: jest.Mocked<IPasswordService>;
   let jwtService: jest.Mocked<IJwtService>;
+  let refreshTokenRepository: jest.Mocked<IRefreshTokenRepository>;
 
   const existingUser = {
     id: 1,
@@ -36,11 +38,25 @@ describe('LoginUserUseCase', () => {
     };
 
     jwtService = {
-      sign: jest.fn(),
-      verify: jest.fn(),
+      generateAccessToken: jest.fn(),
+      generateRefreshToken: jest.fn(),
+      verifyAccessToken: jest.fn(),
+      verifyRefreshToken: jest.fn(),
     };
 
-    useCase = new LoginUserUseCase(userRepository, passwordService, jwtService);
+    refreshTokenRepository = {
+      create: jest.fn(),
+      findById: jest.fn(),
+      revoke: jest.fn(),
+      revokeFamily: jest.fn(),
+    };
+
+    useCase = new LoginUserUseCase(
+      userRepository,
+      passwordService,
+      jwtService,
+      refreshTokenRepository,
+    );
   });
 
   describe('Given a user exists with valid credentials', () => {
@@ -49,18 +65,32 @@ describe('LoginUserUseCase', () => {
 
       passwordService.compare.mockReturnValue(okAsync(true));
 
-      jwtService.sign.mockReturnValue(okAsync('fake-token'));
+      refreshTokenRepository.create.mockReturnValue(
+        okAsync({
+          id: 'refresh-token-id',
+          userId: 1,
+          familyId: 'family-id',
+          revokedAt: null,
+          replacedByTokenId: null,
+          expiresAt: new Date(),
+          createdAt: new Date(),
+        }),
+      );
+
+      jwtService.generateAccessToken.mockReturnValue(okAsync('fake-token'));
+      jwtService.generateRefreshToken.mockReturnValue(
+        okAsync('fake-refresh-token'),
+      );
     });
 
     describe('When the user logs in with correct credentials', () => {
-      it('Then it should return user information and an access token', async () => {
+      it('Then it should return user information, an access token and a refresh token', async () => {
         const result = await useCase.execute({
           email: 'john@mail.com',
           password: 'P4ssword',
         });
 
         expect(result.isOk()).toBe(true);
-
         expect(result._unsafeUnwrap()).toEqual({
           user: {
             id: 1,
@@ -68,6 +98,7 @@ describe('LoginUserUseCase', () => {
             email: 'john@mail.com',
           },
           accessToken: 'fake-token',
+          refreshToken: 'fake-refresh-token',
         });
       });
 
@@ -83,14 +114,39 @@ describe('LoginUserUseCase', () => {
         );
       });
 
-      it('Then it should generate a JWT token with the user id', async () => {
+      it('Then it should persist a refresh token record for the user', async () => {
         await useCase.execute({
           email: 'john@mail.com',
           password: 'P4ssword',
         });
 
-        expect(jwtService.sign).toHaveBeenCalledWith({
+        expect(refreshTokenRepository.create).toHaveBeenCalledWith(
+          expect.objectContaining({ userId: 1 }),
+        );
+      });
+
+      it('Then it should generate a JWT access token with the user id', async () => {
+        await useCase.execute({
+          email: 'john@mail.com',
+          password: 'P4ssword',
+        });
+
+        expect(jwtService.generateAccessToken).toHaveBeenCalledWith({
           userId: 1,
+        });
+      });
+
+      it('Then it should generate a JWT refresh token bound to the persisted record', async () => {
+        await useCase.execute({
+          email: 'john@mail.com',
+          password: 'P4ssword',
+        });
+
+        const [createdRecord] = refreshTokenRepository.create.mock.calls[0];
+
+        expect(jwtService.generateRefreshToken).toHaveBeenCalledWith({
+          userId: 1,
+          jti: createdRecord.id,
         });
       });
     });
@@ -125,7 +181,7 @@ describe('LoginUserUseCase', () => {
 
         expect(passwordService.compare).not.toHaveBeenCalled();
 
-        expect(jwtService.sign).not.toHaveBeenCalled();
+        expect(jwtService.generateAccessToken).not.toHaveBeenCalled();
       });
     });
   });
@@ -159,7 +215,7 @@ describe('LoginUserUseCase', () => {
           password: 'WrongPassword',
         });
 
-        expect(jwtService.sign).not.toHaveBeenCalled();
+        expect(jwtService.generateAccessToken).not.toHaveBeenCalled();
       });
     });
   });
@@ -188,17 +244,60 @@ describe('LoginUserUseCase', () => {
     });
   });
 
+  describe('Given valid credentials and refresh token persistence fails', () => {
+    beforeEach(() => {
+      userRepository.findByEmail.mockReturnValue(okAsync(existingUser));
+
+      passwordService.compare.mockReturnValue(okAsync(true));
+
+      refreshTokenRepository.create.mockReturnValue(
+        errAsync({
+          type: 'DatabaseError',
+          message: 'Unable to persist refresh token',
+        }),
+      );
+    });
+
+    describe('When the user logs in', () => {
+      it('Then it should return a database error', async () => {
+        const result = await useCase.execute({
+          email: 'john@mail.com',
+          password: 'P4ssword',
+        });
+
+        expect(result.isErr()).toBe(true);
+
+        expect(jwtService.generateAccessToken).not.toHaveBeenCalled();
+      });
+    });
+  });
+
   describe('Given valid credentials and JWT generation fails', () => {
     beforeEach(() => {
       userRepository.findByEmail.mockReturnValue(okAsync(existingUser));
 
       passwordService.compare.mockReturnValue(okAsync(true));
 
-      jwtService.sign.mockReturnValue(
+      refreshTokenRepository.create.mockReturnValue(
+        okAsync({
+          id: 'refresh-token-id',
+          userId: 1,
+          familyId: 'family-id',
+          revokedAt: null,
+          replacedByTokenId: null,
+          expiresAt: new Date(),
+          createdAt: new Date(),
+        }),
+      );
+
+      jwtService.generateAccessToken.mockReturnValue(
         errAsync({
           type: 'JwtSignError',
           message: 'Unable to generate token',
         }),
+      );
+      jwtService.generateRefreshToken.mockReturnValue(
+        okAsync('fake-refresh-token'),
       );
     });
 

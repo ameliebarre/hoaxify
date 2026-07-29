@@ -24,3 +24,35 @@ export async function authenticate() {
 
   return loginResponse.body.accessToken as string;
 }
+
+export function extractRefreshTokenCookie(
+  setCookieHeader: string | string[] | undefined,
+): string | undefined {
+  if (!setCookieHeader) return undefined;
+  const cookies = Array.isArray(setCookieHeader)
+    ? setCookieHeader
+    : [setCookieHeader];
+  return cookies.find((cookie) => cookie.startsWith('refreshToken='));
+}
+
+export async function loginWithRefreshToken(user: {
+  username?: string;
+  email: string;
+  password: string;
+}) {
+  await signup({
+    username: user.username ?? 'john',
+    email: user.email,
+    password: user.password,
+  });
+
+  const response = await login({
+    email: user.email,
+    password: user.password,
+  });
+
+  return {
+    response,
+    cookies: extractRefreshTokenCookie(response.headers['set-cookie']),
+  };
+}

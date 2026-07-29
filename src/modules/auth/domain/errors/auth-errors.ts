@@ -4,6 +4,8 @@ import {
   UsernameAlreadyExistsError,
 } from '@modules/auth/domain/errors/auth.error';
 
+import { InvalidRefreshToken } from '@modules/auth/domain/errors/refresh-token.error';
+
 export const AuthErrors = {
   emailAlreadyExists(email: string): EmailAlreadyExistsError {
     return {
@@ -18,11 +20,16 @@ export const AuthErrors = {
       message: `The username "${username}" is already in use.`,
     };
   },
-
   invalidCredentials(): InvalidCredentialsError {
     return {
       type: 'InvalidCredentials',
       message: 'Invalid email or password.',
+    };
+  },
+  invalidRefreshToken(): InvalidRefreshToken {
+    return {
+      type: 'InvalidRefreshToken',
+      message: 'Invalid refresh token',
     };
   },
 } as const;
