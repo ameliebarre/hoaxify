@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { ResultAsync } from 'neverthrow';
 import { injectable } from 'tsyringe';
 
@@ -6,7 +6,10 @@ import { DatabaseError } from '@core/errors/domain/database.error';
 import { fromDatabasePromise } from '@core/errors/infrastructure/result-async';
 import db from '@infrastructure/database';
 import { refreshTokensTable } from '@infrastructure/database/schema';
-import { IRefreshTokenRepository } from '@modules/auth/domain/refresh-token.repository.interface';
+import {
+  IRefreshTokenRepository,
+  RotateParams,
+} from '@modules/auth/domain/refresh-token.repository.interface';
 import {
   NewRefreshToken,
   RefreshTokenRecord,
@@ -62,6 +65,41 @@ export class RefreshTokenRepository implements IRefreshTokenRepository {
         .set({ revokedAt: new Date() })
         .where(eq(refreshTokensTable.familyId, familyId))
         .then(() => undefined),
+    );
+  }
+
+  rotate(
+    params: RotateParams,
+  ): ResultAsync<RefreshTokenRecord | null, DatabaseError> {
+    return fromDatabasePromise(
+      db.transaction(async (tx) => {
+        const [claimedOld] = await tx
+          .update(refreshTokensTable)
+          .set({ revokedAt: new Date(), replacedByTokenId: params.newId })
+          .where(
+            and(
+              eq(refreshTokensTable.id, params.oldId),
+              isNull(refreshTokensTable.revokedAt),
+            ),
+          )
+          .returning();
+
+        if (!claimedOld) {
+          return null;
+        }
+
+        const [created] = await tx
+          .insert(refreshTokensTable)
+          .values({
+            id: params.newId,
+            userId: params.userId,
+            familyId: claimedOld.familyId,
+            expiresAt: params.expiresAt,
+          })
+          .returning();
+
+        return created;
+      }),
     );
   }
 }

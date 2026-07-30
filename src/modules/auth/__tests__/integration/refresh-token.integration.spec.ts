@@ -117,10 +117,8 @@ describe(`POST ${refreshUrl}`, () => {
           .set('Cookie', cookies!);
 
         expect(response.status).toBe(401);
-        // Deleting the user cascades to their refresh_tokens rows, so the
-        // token is already gone by the time it's looked up.
         expect(response.body.error).toEqual({
-          type: 'InvalidRefreshToken',
+          type: 'UserNotFound',
           message: expect.any(String),
         });
       });
@@ -157,6 +155,23 @@ describe(`POST ${refreshUrl}`, () => {
           .set('Cookie', rotatedCookie!);
 
         expect(afterReuseDetected.status).toBe(401);
+      });
+    });
+  });
+
+  describe('Given the same refresh token is presented in two concurrent requests', () => {
+    describe('When both requests are handled at the same time', () => {
+      it('Then only one should succeed', async () => {
+        const { cookies } = await loginWithRefreshToken(user);
+
+        const [first, second] = await Promise.all([
+          request(app).post(refreshUrl).set('Cookie', cookies!),
+          request(app).post(refreshUrl).set('Cookie', cookies!),
+        ]);
+
+        const statuses = [first.status, second.status].sort();
+
+        expect(statuses).toEqual([200, 401]);
       });
     });
   });

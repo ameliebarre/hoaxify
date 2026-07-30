@@ -40,49 +40,55 @@ export class RefreshTokenUseCase {
     return this.jwtService
       .verifyRefreshToken(refreshToken)
       .andThen(({ userId, jti }) =>
-        this.refreshTokenRepository.findById(jti).andThen((record) => {
-          if (!record) {
-            return errAsync(AuthErrors.invalidRefreshToken());
+        this.userRepository.findById(userId).andThen((user) => {
+          if (!user) {
+            return errAsync(UserErrors.notFound());
           }
 
-          if (record.revokedAt) {
-            return this.refreshTokenRepository
-              .revokeFamily(record.familyId)
-              .andThen(() => errAsync(AuthErrors.invalidRefreshToken()));
-          }
+          const newJti = randomUUID();
 
-          return this.userRepository.findById(userId).andThen((user) => {
-            if (!user) {
-              return errAsync(UserErrors.notFound());
-            }
+          return this.refreshTokenRepository
+            .rotate({
+              oldId: jti,
+              newId: newJti,
+              userId: user.id,
+              expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
+            })
+            .andThen((rotated) => {
+              if (!rotated) {
+                return this.handleFailedRotation(jti);
+              }
 
-            const newJti = randomUUID();
-
-            return this.refreshTokenRepository
-              .create({
-                id: newJti,
-                userId: user.id,
-                familyId: record.familyId,
-                expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
-              })
-              .andThen(() =>
-                this.refreshTokenRepository.revoke(jti, newJti),
-              )
-              .andThen(() =>
-                ResultAsync.combine([
-                  this.jwtService.generateAccessToken({ userId: user.id }),
-                  this.jwtService.generateRefreshToken({
-                    userId: user.id,
-                    jti: newJti,
-                  }),
-                ]),
-              )
-              .map(([accessToken, newRefreshToken]) => ({
+              return ResultAsync.combine([
+                this.jwtService.generateAccessToken({ userId: user.id }),
+                this.jwtService.generateRefreshToken({
+                  userId: user.id,
+                  jti: newJti,
+                }),
+              ]).map(([accessToken, newRefreshToken]) => ({
                 accessToken,
                 refreshToken: newRefreshToken,
               }));
-          });
+            });
         }),
       );
+  }
+
+  // Rotation atomically claims the old token (`WHERE id = ? AND revoked_at
+  // IS NULL`), so a failed claim means either the token is unknown or it
+  // was already used — including by a concurrent request racing this one.
+  // Either way, that's a replay signal: revoke the whole family.
+  private handleFailedRotation(
+    jti: string,
+  ): ResultAsync<never, RefreshTokenError> {
+    return this.refreshTokenRepository.findById(jti).andThen((record) => {
+      if (!record) {
+        return errAsync(AuthErrors.invalidRefreshToken());
+      }
+
+      return this.refreshTokenRepository
+        .revokeFamily(record.familyId)
+        .andThen(() => errAsync(AuthErrors.invalidRefreshToken()));
+    });
   }
 }

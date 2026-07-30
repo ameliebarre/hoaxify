@@ -50,6 +50,7 @@ describe('LoginUserUseCase', () => {
       findById: jest.fn(),
       revoke: jest.fn(),
       revokeFamily: jest.fn(),
+      rotate: jest.fn(),
     };
 
     useCase = new LoginUserUseCase(
