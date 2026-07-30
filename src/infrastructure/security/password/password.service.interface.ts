@@ -8,4 +8,9 @@ export interface IPasswordService {
     password: string,
     hashedPassword: string,
   ): ResultAsync<boolean, PasswordError>;
+  // Runs a real bcrypt comparison even when hashedPassword is null (dummy hash), to keep timing constant and prevent user enumeration.
+  compareOrDummy(
+    password: string,
+    hashedPassword: string | null,
+  ): ResultAsync<boolean, PasswordError>;
 }

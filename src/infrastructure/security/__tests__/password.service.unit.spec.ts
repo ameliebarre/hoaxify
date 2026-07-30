@@ -82,4 +82,55 @@ describe('PasswordService', () => {
       });
     });
   });
+
+  describe('Given a real password hash', () => {
+    describe('When comparing the matching password with compareOrDummy', () => {
+      it('Then it should return true', async () => {
+        const hashResult = await passwordService.hash('P4ssword');
+
+        const hashedPassword = hashResult._unsafeUnwrap();
+
+        const result = await passwordService.compareOrDummy(
+          'P4ssword',
+          hashedPassword,
+        );
+
+        expect(result.isOk()).toBe(true);
+
+        expect(result._unsafeUnwrap()).toBe(true);
+      });
+    });
+
+    describe('When comparing a non-matching password with compareOrDummy', () => {
+      it('Then it should return false', async () => {
+        const hashResult = await passwordService.hash('P4ssword');
+
+        const hashedPassword = hashResult._unsafeUnwrap();
+
+        const result = await passwordService.compareOrDummy(
+          'WrongPassword',
+          hashedPassword,
+        );
+
+        expect(result.isOk()).toBe(true);
+
+        expect(result._unsafeUnwrap()).toBe(false);
+      });
+    });
+  });
+
+  describe('Given no password hash exists (unknown account)', () => {
+    describe('When comparing with compareOrDummy', () => {
+      it('Then it should still resolve successfully and return false', async () => {
+        const result = await passwordService.compareOrDummy(
+          'AnyPassword',
+          null,
+        );
+
+        expect(result.isOk()).toBe(true);
+
+        expect(result._unsafeUnwrap()).toBe(false);
+      });
+    });
+  });
 });

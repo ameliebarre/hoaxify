@@ -8,6 +8,11 @@ import type { IPasswordService } from '@infrastructure/security/password/passwor
 
 const SALT_ROUNDS = 12;
 
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync(
+  'dummy-password-for-timing-safety',
+  SALT_ROUNDS,
+);
+
 @injectable()
 export class PasswordService implements IPasswordService {
   hash(password: string): ResultAsync<string, PasswordError> {
@@ -30,6 +35,15 @@ export class PasswordService implements IPasswordService {
         type: 'PasswordCompareError',
         message: String(error),
       }),
+    );
+  }
+
+  compareOrDummy(
+    password: string,
+    hashedPassword: string | null,
+  ): ResultAsync<boolean, PasswordError> {
+    return this.compare(password, hashedPassword ?? DUMMY_PASSWORD_HASH).map(
+      (isValid) => hashedPassword !== null && isValid,
     );
   }
 }

@@ -33,14 +33,10 @@ export class LoginUserUseCase {
 
   execute(data: LoginInput): ResultAsync<LoginResponse, LoginError> {
     return this.userRepository.findByEmail(data.email).andThen((user) => {
-      if (!user) {
-        return errAsync(AuthErrors.invalidCredentials());
-      }
-
       return this.passwordService
-        .compare(data.password, user.password)
+        .compareOrDummy(data.password, user?.password ?? null)
         .andThen((isPasswordValid) => {
-          if (!isPasswordValid) {
+          if (!user || !isPasswordValid) {
             return errAsync(AuthErrors.invalidCredentials());
           }
 

@@ -35,6 +35,7 @@ describe('LoginUserUseCase', () => {
     passwordService = {
       hash: jest.fn(),
       compare: jest.fn(),
+      compareOrDummy: jest.fn(),
     };
 
     jwtService = {
@@ -63,7 +64,7 @@ describe('LoginUserUseCase', () => {
     beforeEach(() => {
       userRepository.findByEmail.mockReturnValue(okAsync(existingUser));
 
-      passwordService.compare.mockReturnValue(okAsync(true));
+      passwordService.compareOrDummy.mockReturnValue(okAsync(true));
 
       refreshTokenRepository.create.mockReturnValue(
         okAsync({
@@ -108,7 +109,7 @@ describe('LoginUserUseCase', () => {
           password: 'P4ssword',
         });
 
-        expect(passwordService.compare).toHaveBeenCalledWith(
+        expect(passwordService.compareOrDummy).toHaveBeenCalledWith(
           'P4ssword',
           'hashed-password',
         );
@@ -155,6 +156,8 @@ describe('LoginUserUseCase', () => {
   describe('Given no user exists with the provided email', () => {
     beforeEach(() => {
       userRepository.findByEmail.mockReturnValue(okAsync(null));
+
+      passwordService.compareOrDummy.mockReturnValue(okAsync(false));
     });
 
     describe('When the user tries to login', () => {
@@ -173,13 +176,16 @@ describe('LoginUserUseCase', () => {
         });
       });
 
-      it('Then it should not compare the password', async () => {
+      it('Then it should still run a dummy password comparison, to keep the response time constant', async () => {
         await useCase.execute({
           email: 'unknown@mail.com',
           password: 'P4ssword',
         });
 
-        expect(passwordService.compare).not.toHaveBeenCalled();
+        expect(passwordService.compareOrDummy).toHaveBeenCalledWith(
+          'P4ssword',
+          null,
+        );
 
         expect(jwtService.generateAccessToken).not.toHaveBeenCalled();
       });
@@ -190,7 +196,7 @@ describe('LoginUserUseCase', () => {
     beforeEach(() => {
       userRepository.findByEmail.mockReturnValue(okAsync(existingUser));
 
-      passwordService.compare.mockReturnValue(okAsync(false));
+      passwordService.compareOrDummy.mockReturnValue(okAsync(false));
     });
 
     describe('When the user logs in with an incorrect password', () => {
@@ -224,7 +230,7 @@ describe('LoginUserUseCase', () => {
     beforeEach(() => {
       userRepository.findByEmail.mockReturnValue(okAsync(existingUser));
 
-      passwordService.compare.mockReturnValue(
+      passwordService.compareOrDummy.mockReturnValue(
         errAsync({
           type: 'PasswordCompareError',
           message: 'Unable to compare password',
@@ -248,7 +254,7 @@ describe('LoginUserUseCase', () => {
     beforeEach(() => {
       userRepository.findByEmail.mockReturnValue(okAsync(existingUser));
 
-      passwordService.compare.mockReturnValue(okAsync(true));
+      passwordService.compareOrDummy.mockReturnValue(okAsync(true));
 
       refreshTokenRepository.create.mockReturnValue(
         errAsync({
@@ -276,7 +282,7 @@ describe('LoginUserUseCase', () => {
     beforeEach(() => {
       userRepository.findByEmail.mockReturnValue(okAsync(existingUser));
 
-      passwordService.compare.mockReturnValue(okAsync(true));
+      passwordService.compareOrDummy.mockReturnValue(okAsync(true));
 
       refreshTokenRepository.create.mockReturnValue(
         okAsync({

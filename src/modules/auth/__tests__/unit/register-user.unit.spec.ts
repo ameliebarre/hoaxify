@@ -38,6 +38,7 @@ describe('RegisterUserUseCase', () => {
     passwordService = {
       hash: jest.fn(),
       compare: jest.fn(),
+      compareOrDummy: jest.fn(),
     };
 
     useCase = new RegisterUserUseCase(userRepository, passwordService);
