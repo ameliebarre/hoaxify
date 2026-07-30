@@ -3,8 +3,10 @@ import express from 'express';
 
 import { container } from '@/composition-root';
 
+import env from '@core/config/env';
 import { TOKENS } from '@core/di/token';
 import { IJwtService } from '@infrastructure/security/jwt/jwt.service.interface';
+import { createRateLimiter } from '@middlewares/rate-limit.middleware';
 import { validate } from '@middlewares/validate.middleware';
 import { AuthController } from '@modules/auth/presentation/auth.controller';
 import { authenticateMiddleware } from '@modules/auth/presentation/auth.middleware';
@@ -18,14 +20,45 @@ const jwtService = container.resolve<IJwtService>(TOKENS.JwtService);
 
 const authenticate = authenticateMiddleware(jwtService);
 
-router.post('/signup', validate(signupSchema), authController.signup);
+const skipInTests = () => env.ENV === 'testing';
 
-router.post('/login', validate(loginSchema), authController.login);
+const signupLimiter = createRateLimiter({
+  windowMs: 60 * 60 * 1000,
+  limit: 5,
+  skip: skipInTests,
+});
+
+const loginLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  limit: 5,
+  skip: skipInTests,
+});
+
+const refreshLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  limit: 30,
+  skip: skipInTests,
+});
+
+const logoutLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  limit: 30,
+  skip: skipInTests,
+});
+
+router.post(
+  '/signup',
+  signupLimiter,
+  validate(signupSchema),
+  authController.signup,
+);
+
+router.post('/login', loginLimiter, validate(loginSchema), authController.login);
 
 router.get('/me', authenticate, authController.me);
 
-router.post('/refresh', authController.refresh);
+router.post('/refresh', refreshLimiter, authController.refresh);
 
-router.post('/logout', authController.logout);
+router.post('/logout', logoutLimiter, authController.logout);
 
 export default router;

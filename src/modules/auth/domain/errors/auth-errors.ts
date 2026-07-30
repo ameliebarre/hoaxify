@@ -3,7 +3,6 @@ import {
   InvalidCredentialsError,
   UsernameAlreadyExistsError,
 } from '@modules/auth/domain/errors/auth.error';
-
 import { InvalidRefreshToken } from '@modules/auth/domain/errors/refresh-token.error';
 
 export const AuthErrors = {

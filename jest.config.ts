@@ -12,6 +12,7 @@ const config: Config = {
     '^@middlewares/(.*)$': '<rootDir>/src/middlewares/$1',
     '^@tests/(.*)$': '<rootDir>/tests/$1',
   },
+  setupFiles: ['<rootDir>/tests/jest.env.setup.ts'],
   setupFilesAfterEnv: ['<rootDir>/tests/jest.setup.ts'],
   testMatch: ['**/*.unit.spec.ts', '**/*.integration.spec.ts'],
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
