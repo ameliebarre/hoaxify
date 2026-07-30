@@ -1,10 +1,14 @@
 import { ErrorRequestHandler } from 'express';
 
+// Terminal handler: never delegates to Express's built-in error handler,
+// whose stack-trace exposure depends on NODE_ENV — a variable this app
+// never sets (it uses its own ENV instead). Sanitizing and responding here
+// keeps that behavior independent of how NODE_ENV happens to be configured.
 export const errorMiddleware: ErrorRequestHandler = (
   error,
   _req,
   res,
-  next,
+  _next,
 ) => {
   if (
     error instanceof SyntaxError &&
@@ -19,5 +23,12 @@ export const errorMiddleware: ErrorRequestHandler = (
     });
   }
 
-  return next(error);
+  console.error('Unhandled error', error);
+
+  return res.status(500).json({
+    error: {
+      type: 'InternalServerError',
+      message: 'An unexpected error occurred. Please try again later.',
+    },
+  });
 };

@@ -45,30 +45,39 @@ describe('errorMiddleware', () => {
 
   describe('Given the error is not a JSON parsing error', () => {
     describe('When the error middleware is executed', () => {
-      it('Then it should pass the error to the next middleware', () => {
-        const error = new Error('Something went wrong');
+      it('Then it should return a generic 500 response without leaking the error message', () => {
+        const error = new Error('connection refused at 10.0.0.5:5432');
 
         errorMiddleware(error, req, res, next);
 
-        expect(next).toHaveBeenCalledWith(error);
+        expect(res.status).toHaveBeenCalledWith(500);
 
-        expect(res.status).not.toHaveBeenCalled();
-        expect(res.json).not.toHaveBeenCalled();
+        expect(res.json).toHaveBeenCalledWith({
+          error: {
+            type: 'InternalServerError',
+            message: expect.any(String),
+          },
+        });
+
+        const [body] = (res.json as jest.Mock).mock.calls[0];
+        expect(body.error.message).not.toContain('10.0.0.5');
+
+        expect(next).not.toHaveBeenCalled();
       });
     });
   });
 
   describe('Given the error is a SyntaxError without a body property', () => {
     describe('When the error middleware is executed', () => {
-      it('Then it should pass the error to the next middleware', () => {
+      it('Then it should return a generic 500 response', () => {
         const error = new SyntaxError('Unexpected token');
 
         errorMiddleware(error, req, res, next);
 
-        expect(next).toHaveBeenCalledWith(error);
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalled();
 
-        expect(res.status).not.toHaveBeenCalled();
-        expect(res.json).not.toHaveBeenCalled();
+        expect(next).not.toHaveBeenCalled();
       });
     });
   });
