@@ -18,6 +18,7 @@ describe('CreateHoaxUseCase', () => {
   beforeEach(() => {
     hoaxRepository = {
       create: jest.fn(),
+      findMany: jest.fn(),
     };
 
     useCase = new CreateHoaxUseCase(hoaxRepository);

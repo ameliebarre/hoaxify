@@ -17,6 +17,7 @@ import { IHoaxRepository } from '@modules/hoax/domain/hoax.repository.interface'
 import { HoaxRepository } from '@modules/hoax/infrastructure/hoax.repository';
 import { HoaxController } from '@modules/hoax/presentation/hoax.controller';
 import { CreateHoaxUseCase } from '@modules/hoax/use-cases/create-hoax.use-case';
+import { ListHoaxesUseCase } from '@modules/hoax/use-cases/list-hoaxes.use-case';
 import { IUserRepository } from '@modules/user/domain/user.repository.interface';
 import { UserRepository } from '@modules/user/infrastructure/user.repository';
 
@@ -61,6 +62,9 @@ container.register(LogoutUseCase, {
 });
 container.register(CreateHoaxUseCase, {
   useClass: CreateHoaxUseCase,
+});
+container.register(ListHoaxesUseCase, {
+  useClass: ListHoaxesUseCase,
 });
 
 // Controllers

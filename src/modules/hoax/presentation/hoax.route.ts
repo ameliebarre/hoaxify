@@ -17,6 +17,8 @@ const jwtService = container.resolve<IJwtService>(TOKENS.JwtService);
 
 const authenticate = authenticateMiddleware(jwtService);
 
+router.get('/', hoaxController.list);
+
 router.post(
   '/',
   authenticate,
