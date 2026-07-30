@@ -203,5 +203,40 @@ describe(`POST ${signupUrl}`, () => {
         expect(details.fieldErrors.password).toBeDefined();
       });
     });
+
+    describe('When the password exceeds 72 bytes', () => {
+      it('Then it should return a validation error', async () => {
+        const response = await signup({
+          ...validUser,
+          password: 'a'.repeat(73),
+        });
+
+        const { type, details } = response.body.error;
+
+        expect(response.status).toBe(400);
+        expect(type).toBe('ValidationError');
+        expect(details.fieldErrors.password).toContain(
+          'Password must not exceed 72 bytes',
+        );
+      });
+    });
+
+    describe('When the password has 72 characters or fewer but exceeds 72 bytes because of multi-byte characters', () => {
+      it('Then it should return a validation error', async () => {
+        // 40 'é' characters: 40 chars, but 80 bytes in UTF-8.
+        const response = await signup({
+          ...validUser,
+          password: 'é'.repeat(40),
+        });
+
+        const { type, details } = response.body.error;
+
+        expect(response.status).toBe(400);
+        expect(type).toBe('ValidationError');
+        expect(details.fieldErrors.password).toContain(
+          'Password must not exceed 72 bytes',
+        );
+      });
+    });
   });
 });

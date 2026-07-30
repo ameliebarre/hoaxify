@@ -156,5 +156,17 @@ describe(`POST ${loginUrl}`, () => {
         expect(response.body.error.type).toBe('ValidationError');
       });
     });
+
+    describe('When the password exceeds 72 bytes', () => {
+      it('Then it should return a validation error', async () => {
+        const response = await login({
+          email: user.email,
+          password: 'a'.repeat(73),
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.body.error.type).toBe('ValidationError');
+      });
+    });
   });
 });

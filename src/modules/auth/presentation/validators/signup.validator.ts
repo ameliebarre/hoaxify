@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { withMaxBytes } from '@modules/auth/presentation/validators/password.schema';
+
 export const signupSchema = z.object({
   username: z
     .string()
@@ -9,7 +11,9 @@ export const signupSchema = z.object({
   email: z
     .transform((value) => String(value).trim().toLowerCase())
     .pipe(z.email()),
-  password: z.string().min(8, 'Password must be at least 8 characters long'),
+  password: withMaxBytes(
+    z.string().min(8, 'Password must be at least 8 characters long'),
+  ),
 });
 
 export type SignupInput = z.infer<typeof signupSchema>;

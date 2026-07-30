@@ -13,18 +13,26 @@ import type { RefreshTokenPayload } from '@infrastructure/security/jwt/jwt.types
 @injectable()
 export class JwtService implements IJwtService {
   generateAccessToken(payload: AuthUser): ResultAsync<string, JwtError> {
-    return this.sign(payload, env.ACCESS_SECRET, ACCESS_TOKEN_TTL);
+    return this.sign(
+      { ...payload, type: 'access' },
+      env.ACCESS_SECRET,
+      ACCESS_TOKEN_TTL,
+    );
   }
 
   generateRefreshToken(
     payload: RefreshTokenPayload,
   ): ResultAsync<string, JwtError> {
-    return this.sign(payload, env.REFRESH_SECRET, REFRESH_TOKEN_TTL);
+    return this.sign(
+      { ...payload, type: 'refresh' },
+      env.REFRESH_SECRET,
+      REFRESH_TOKEN_TTL,
+    );
   }
 
   verifyAccessToken(token: string): ResultAsync<AuthUser, JwtError> {
     return this.verify(token, env.ACCESS_SECRET).andThen((payload) => {
-      if (typeof payload.userId !== 'number') {
+      if (typeof payload.userId !== 'number' || payload.type !== 'access') {
         return errAsync(
           this.toJwtError('JwtVerifyError')(new Error('Invalid JWT payload')),
         );
@@ -40,7 +48,8 @@ export class JwtService implements IJwtService {
     return this.verify(token, env.REFRESH_SECRET).andThen((payload) => {
       if (
         typeof payload.userId !== 'number' ||
-        typeof payload.jti !== 'string'
+        typeof payload.jti !== 'string' ||
+        payload.type !== 'refresh'
       ) {
         return errAsync(
           this.toJwtError('JwtVerifyError')(new Error('Invalid JWT payload')),

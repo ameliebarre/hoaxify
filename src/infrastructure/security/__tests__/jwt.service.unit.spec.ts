@@ -176,6 +176,46 @@ describe('JwtService', () => {
     });
   });
 
+  describe('Given a token signed with the access secret but carrying the refresh type claim', () => {
+    describe('When verifying it as an access token', () => {
+      it('Then it should return a JwtVerifyError', async () => {
+        const token = jwt.sign(
+          { userId: 1, type: 'refresh' },
+          env.ACCESS_SECRET,
+          { algorithm: 'HS256' },
+        );
+
+        const result = await jwtService.verifyAccessToken(token);
+
+        expect(result.isErr()).toBe(true);
+
+        const error = result._unsafeUnwrapErr();
+
+        expect(error.type).toBe('JwtVerifyError');
+      });
+    });
+  });
+
+  describe('Given a token signed with the refresh secret but carrying the access type claim', () => {
+    describe('When verifying it as a refresh token', () => {
+      it('Then it should return a JwtVerifyError', async () => {
+        const token = jwt.sign(
+          { userId: 1, jti: 'some-jti', type: 'access' },
+          env.REFRESH_SECRET,
+          { algorithm: 'HS256' },
+        );
+
+        const result = await jwtService.verifyRefreshToken(token);
+
+        expect(result.isErr()).toBe(true);
+
+        const error = result._unsafeUnwrapErr();
+
+        expect(error.type).toBe('JwtVerifyError');
+      });
+    });
+  });
+
   describe('Given a JWT without userId', () => {
     describe('When verifying the token', () => {
       it('Then it should return a JwtVerifyError', async () => {
