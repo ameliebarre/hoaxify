@@ -7,6 +7,7 @@ import {
   LoginAuthError,
 } from '@modules/auth/domain/errors/auth.error';
 import { RefreshTokenError } from '@modules/auth/domain/errors/refresh-token.error';
+import { HoaxError } from '@modules/hoax/domain/errors/hoax.error';
 import { UserError } from '@modules/user/domain/errors/user.error';
 
 export type AppError =
@@ -17,4 +18,5 @@ export type AppError =
   | SignupAuthError
   | LoginAuthError
   | UserError
-  | RefreshTokenError;
+  | RefreshTokenError
+  | HoaxError;

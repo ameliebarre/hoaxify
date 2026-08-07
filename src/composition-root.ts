@@ -13,6 +13,12 @@ import { LoginUserUseCase } from '@modules/auth/use-cases/login-user.use-case';
 import { LogoutUseCase } from '@modules/auth/use-cases/logout.use-case';
 import { RefreshTokenUseCase } from '@modules/auth/use-cases/refresh-token.use-case';
 import { RegisterUserUseCase } from '@modules/auth/use-cases/register-user.use-case';
+import { IHoaxRepository } from '@modules/hoax/domain/hoax.repository.interface';
+import { HoaxRepository } from '@modules/hoax/infrastructure/hoax.repository';
+import { HoaxController } from '@modules/hoax/presentation/hoax.controller';
+import { CreateHoaxUseCase } from '@modules/hoax/use-cases/create-hoax.use-case';
+import { DeleteHoaxUseCase } from '@modules/hoax/use-cases/delete-hoax.use-case';
+import { ListHoaxesUseCase } from '@modules/hoax/use-cases/list-hoaxes.use-case';
 import { IUserRepository } from '@modules/user/domain/user.repository.interface';
 import { UserRepository } from '@modules/user/infrastructure/user.repository';
 
@@ -26,6 +32,10 @@ container.registerSingleton<IUserRepository>(
 container.registerSingleton<IRefreshTokenRepository>(
   TOKENS.RefreshTokenRepository,
   RefreshTokenRepository,
+);
+container.registerSingleton<IHoaxRepository>(
+  TOKENS.HoaxRepository,
+  HoaxRepository,
 );
 
 // Services
@@ -51,8 +61,18 @@ container.register(RefreshTokenUseCase, {
 container.register(LogoutUseCase, {
   useClass: LogoutUseCase,
 });
+container.register(CreateHoaxUseCase, {
+  useClass: CreateHoaxUseCase,
+});
+container.register(ListHoaxesUseCase, {
+  useClass: ListHoaxesUseCase,
+});
+container.register(DeleteHoaxUseCase, {
+  useClass: DeleteHoaxUseCase,
+});
 
 // Controllers
 container.register(AuthController, { useClass: AuthController });
+container.register(HoaxController, { useClass: HoaxController });
 
 export { container };
