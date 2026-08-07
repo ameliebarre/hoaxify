@@ -59,4 +59,24 @@ export class HoaxRepository implements IHoaxRepository {
       ]).then(([hoaxes, totalCount]) => ({ hoaxes, totalCount })),
     );
   }
+
+  findById(id: number): ResultAsync<Hoax | null, DatabaseError> {
+    return fromDatabasePromise(
+      db
+        .select()
+        .from(hoaxesTable)
+        .where(eq(hoaxesTable.id, id))
+        .limit(1)
+        .then((rows) => rows[0] ?? null),
+    );
+  }
+
+  deleteById(id: number): ResultAsync<void, DatabaseError> {
+    return fromDatabasePromise(
+      db
+        .delete(hoaxesTable)
+        .where(eq(hoaxesTable.id, id))
+        .then(() => undefined),
+    );
+  }
 }

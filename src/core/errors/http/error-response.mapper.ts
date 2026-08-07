@@ -22,6 +22,14 @@ export function mapErrorToHttp(error: AppError) {
     case 'InvalidRefreshToken':
       return httpError(401, error);
 
+    // 403 Forbidden
+    case 'UnauthorizedHoaxDeletion':
+      return httpError(403, error);
+
+    // 404 Not Found
+    case 'HoaxNotFound':
+      return httpError(404, error);
+
     // 409 Conflict
     case 'EmailAlreadyExists':
     case 'UsernameAlreadyExists':

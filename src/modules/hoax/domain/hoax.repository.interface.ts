@@ -1,6 +1,6 @@
-import { DatabaseError } from '@core/errors/domain/database.error';
 import { ResultAsync } from 'neverthrow';
 
+import { DatabaseError } from '@core/errors/domain/database.error';
 import { Hoax, HoaxWithAuthor, NewHoax } from '@modules/hoax/domain/hoax.types';
 
 export interface FindManyHoaxesParams {
@@ -19,4 +19,6 @@ export interface IHoaxRepository {
   findMany(
     params: FindManyHoaxesParams,
   ): ResultAsync<FindManyHoaxesResult, DatabaseError>;
+  findById(id: number): ResultAsync<Hoax | null, DatabaseError>;
+  deleteById(id: number): ResultAsync<void, DatabaseError>;
 }

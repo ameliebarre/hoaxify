@@ -26,4 +26,6 @@ router.post(
   hoaxController.create,
 );
 
+router.delete('/:id', authenticate, hoaxController.delete);
+
 export default router;

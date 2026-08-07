@@ -19,6 +19,8 @@ describe('CreateHoaxUseCase', () => {
     hoaxRepository = {
       create: jest.fn(),
       findMany: jest.fn(),
+      findById: jest.fn(),
+      deleteById: jest.fn(),
     };
 
     useCase = new CreateHoaxUseCase(hoaxRepository);
